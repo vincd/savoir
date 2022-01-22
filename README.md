@@ -123,3 +123,12 @@ This command take a screenshot of a URL using a headless browser.
 ```bash
 savoir webscreenshot --url {url} --renderer {chrome|chromium|firefox} --renderer-path {path}
 ```
+
+
+## Credits
+
+- [gentilkiwi/mimikatz](https://github.com/gentilkiwi/mimikatz)
+- [skelsec/pypykatz](https://github.com/skelsec/pypykatz)
+- [SecureAuthCorp/impacket](https://github.com/SecureAuthCorp/impacket)
+- [GhostPack/Rubeus](https://github.com/GhostPack/Rubeus)
+- [jcmturner/gokrb5](https://github.com/jcmturner/gokrb5)
