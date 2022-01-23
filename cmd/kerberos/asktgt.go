@@ -31,6 +31,25 @@ func paramStringToEType(enctype string) int32 {
 	return encTypeMapping["aes256"]
 }
 
+func printTGT(tgt *krb5.ASRep, format string, outputFile string) error {
+	if format == "john" {
+		fmt.Printf("%s\n", tgt.JohnString())
+	} else if format == "hashcat" {
+		fmt.Printf("%s\n", tgt.HashcatString())
+	}
+
+	if len(outputFile) > 0 {
+		cred := tgt.Credentials()
+		if err := cred.SaveToFile(outputFile); err != nil {
+			return err
+		}
+
+		fmt.Printf("TGT saved to %s.\n", outputFile)
+	}
+
+	return nil
+}
+
 func init() {
 	var domain string
 	var username string
@@ -77,24 +96,12 @@ func init() {
 				return err
 			}
 
-			if format == "john" {
-				fmt.Printf("%s\n", tgt.JohnString())
-			} else if format == "hashcat" {
-				fmt.Printf("%s\n", tgt.HashcatString())
-			}
-
-			if len(outputFile) > 0 {
-				cred := tgt.Credentials()
-				if err := cred.SaveToFile(outputFile); err != nil {
-					return err
-				}
-
-				fmt.Printf("TGT saved to %s.\n", outputFile)
-			}
+			printTGT(tgt, format, outputFile)
 
 			return nil
 		},
 	}
+
 	askTgtCmd.Flags().StringVarP(&domain, "domain", "d", "", "Domain to target")
 	askTgtCmd.Flags().StringVarP(&username, "username", "u", "", "Username of the targeted user")
 	askTgtCmd.Flags().StringVarP(&password, "password", "p", "", "Password of the targeted user")

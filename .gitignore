@@ -17,6 +17,7 @@ build/
 *.ccache
 *.DMP
 *.hashes
+*.hive
 
 # macos
 .DS_Store

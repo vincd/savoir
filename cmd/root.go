@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/vincd/savoir/cmd/kerberos"
+	"github.com/vincd/savoir/cmd/ldap"
 	"github.com/vincd/savoir/cmd/lsass"
 	"github.com/vincd/savoir/cmd/sam"
 	"github.com/vincd/savoir/cmd/token"
@@ -51,6 +52,7 @@ func addVersionCommand() {
 
 func addSubCommands() {
 	rootCmd.AddCommand(kerberos.Command)
+	rootCmd.AddCommand(ldap.Command)
 	rootCmd.AddCommand(sam.Command)
 	rootCmd.AddCommand(lsass.Command)
 	rootCmd.AddCommand(token.Command)
