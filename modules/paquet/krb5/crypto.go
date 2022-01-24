@@ -6,7 +6,8 @@ import (
 
 // https://datatracker.ietf.org/doc/html/rfc4120#section-5.2.9
 type EncryptedData struct {
-	EType  int32  `asn1:"explicit,tag:0"`
+	EType int32 `asn1:"explicit,tag:0"`
+	// TODO: this is `kvno    [1] UInt32 OPTIONAL,` in the rfc not int
 	KVNO   int    `asn1:"explicit,optional,tag:1"`
 	Cipher []byte `asn1:"explicit,tag:2"`
 }
@@ -26,7 +27,8 @@ type Checksum struct {
 func (k *EncryptedData) Encrypt(eType int32, key []byte, b []byte, usage uint32) error {
 	if eType == 0 {
 		k.EType = 0
-		k.KVNO = PVNO
+		// TODO: uncomment this line when exporting kirbi tickets to Rubeus
+		// k.KVNO = PVNO
 		k.Cipher = b
 
 		return nil

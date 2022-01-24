@@ -96,7 +96,7 @@ func (k *KRBCred) DisplayTicket(displayB64ticket bool, extractKerberoastHash boo
 // Unmarshal the byte to the KRBCred structure and decrypt the encrypted part.
 func (k *KRBCred) Unmarshal(b []byte) error {
 	m := &marshalKRBCred{}
-	if err := unmarshalMessage(b, m, KRB_CRED); err != nil {
+	if err := unmarshalMessage(b, m, TagKRBCred); err != nil {
 		return err
 	}
 
@@ -105,7 +105,7 @@ func (k *KRBCred) Unmarshal(b []byte) error {
 		return err
 	}
 
-	decPart, err := m.EncPart.Decrypt([]byte{}, 0)
+	decPart, err := m.EncPart.Decrypt(nil, 0)
 	if err != nil {
 		return nil
 	}
@@ -137,15 +137,14 @@ func (k *KRBCred) Marshal() ([]byte, error) {
 		return nil, err
 	}
 
-	// TODO: set usage key to 0
 	if err := m.EncPart.Encrypt(0, nil, marshledDecryptedPart, 0); err != nil {
 		return nil, err
 	}
 
-	return asn1.MarshalWithParams(m, fmt.Sprintf("application,explicit,tag:%d", KRB_CRED))
+	return asn1.MarshalWithParams(m, fmt.Sprintf("application,explicit,tag:%d", TagKRBCred))
 }
 
-// Save to a kirbi file
+// Save to KRBCred to a kirbi file
 func (k *KRBCred) SaveToFile(path string) error {
 	kirbi, err := k.Marshal()
 	if err != nil {
@@ -161,6 +160,17 @@ func (k *KRBCred) SaveToFile(path string) error {
 	f.Write(kirbi)
 
 	return nil
+}
+
+// Encode to base64 a KRBCred structure. Usefull when you want to share a ticket
+// with other tools such as Rubeus.
+func (k *KRBCred) Base64() (string, error) {
+	kirbi, err := k.Marshal()
+	if err != nil {
+		return "", err
+	}
+
+	return base64.StdEncoding.EncodeToString(kirbi), nil
 }
 
 func NewKrbCredFromFile(path string) (*KRBCred, error) {

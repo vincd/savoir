@@ -27,7 +27,10 @@ func ensureResponseTag(res []byte, expectedTag byte) error {
 	return nil
 }
 
-func AskTGT(domain string, username string, password string, key []byte, eTypeValue int32, dcIp string, noPac bool) (*ASRep, error) {
+// AskTGT:
+//  * noPreauth: return TGT (with undecrypted tickets) if true
+//  * noPac: as no-pac to the KDC (not tested)
+func AskTGT(domain string, username string, password string, key []byte, eTypeValue int32, dcIp string, noPreauth bool, noPac bool) (*ASRep, error) {
 	if len(domain) == 0 {
 		return nil, fmt.Errorf("Domain name cannot be empty")
 	}
@@ -42,7 +45,7 @@ func AskTGT(domain string, username string, password string, key []byte, eTypeVa
 		NameString: []string{username},
 	}
 	serverName := PrincipalName{
-		NameType:   KRB_NT_PRINCIPAL,
+		NameType:   KRB_NT_PRINCIPAL, // KRB_NT_SRV_INST ?
 		NameString: []string{"krbtgt", domain},
 	}
 	kOptions := NewKerberosFlags()
@@ -73,7 +76,7 @@ func AskTGT(domain string, username string, password string, key []byte, eTypeVa
 		resType := getStructureTag(res)
 
 		// There is no preauthentication: `Do not require Kerberos preauthentication`
-		if resType == TagASREP {
+		if resType == TagASREP && noPreauth {
 			// The response is a valid TGT
 			asRep := &ASRep{}
 			if err := asRep.Unmarshal(res); err != nil {
@@ -83,27 +86,43 @@ func AskTGT(domain string, username string, password string, key []byte, eTypeVa
 			return asRep, nil
 		}
 
-		// Ensure with have an error because we need a preauthentication
-		if resType != KRB_ERROR {
-			return nil, fmt.Errorf("Unauthenticated AS-Req should return an error, it returns the type %d instead", resType)
-		}
-
-		kError := &KRBError{}
-		if err := kError.Unmarshal(res); err != nil {
-			return nil, err
-		}
-
-		if kError.ErrorCode == KDC_ERR_ETYPE_NOSUPP {
-			return nil, fmt.Errorf("[KDC_ERR_ETYPE_NOSUPP] KDC has no support for encryption type %s", eType)
-		} else if kError.ErrorCode == KDC_ERR_C_PRINCIPAL_UNKNOWN {
-			return nil, fmt.Errorf("[KDC_ERR_C_PRINCIPAL_UNKNOWN] KDC does not know client with principal \"%s\"", username)
-		} else if kError.ErrorCode != KDC_ERR_PREAUTH_REQUIRED {
-			return nil, fmt.Errorf("Unauthenticated ASRep returns the error: %s", kError.String())
-		}
-
+		// Parse the PAData to get information about key generation
 		paDatas := make([]PAData, 0)
-		if _, err := asn1.Unmarshal(kError.EData, &paDatas); err != nil {
-			return nil, err
+
+		if resType == TagASREP {
+			if resType != TagASREP {
+				return nil, fmt.Errorf("Unauthenticated AS-Req with no-preauthentication should return AS-Rep, it returns the type %d instead", resType)
+			}
+
+			noPreauthTGT := &ASRep{}
+			if err := noPreauthTGT.Unmarshal(res); err != nil {
+				return nil, fmt.Errorf("Cannot unmarshall ASRep: %s", err)
+			}
+
+			// The TGT should conatains the informations we need (for AES)
+			paDatas = noPreauthTGT.PAData
+		} else {
+			// Ensure with have an error because we need a preauthentication
+			if resType != KRB_ERROR {
+				return nil, fmt.Errorf("Unauthenticated AS-Req should return an error, it returns the type %d instead", resType)
+			}
+
+			kError := &KRBError{}
+			if err := kError.Unmarshal(res); err != nil {
+				return nil, err
+			}
+
+			if kError.ErrorCode == KDC_ERR_ETYPE_NOSUPP {
+				return nil, fmt.Errorf("[KDC_ERR_ETYPE_NOSUPP] KDC has no support for encryption type %s", eType)
+			} else if kError.ErrorCode == KDC_ERR_C_PRINCIPAL_UNKNOWN {
+				return nil, fmt.Errorf("[KDC_ERR_C_PRINCIPAL_UNKNOWN] KDC does not know client with principal \"%s\"", username)
+			} else if kError.ErrorCode != KDC_ERR_PREAUTH_REQUIRED {
+				return nil, fmt.Errorf("Unauthenticated ASRep returns the error: %s", kError.String())
+			}
+
+			if _, err := asn1.Unmarshal(kError.EData, &paDatas); err != nil {
+				return nil, err
+			}
 		}
 
 		salt := ""
@@ -181,10 +200,6 @@ func AskTGT(domain string, username string, password string, key []byte, eTypeVa
 
 	return tgt, nil
 }
-
-// func AskTGS2(domain string, serverName PrincipalName, tgt *ASRep, dcIp string) (*TGSRep, error) {
-
-// }
 
 func AskTGS(domain string, serverName PrincipalName, clientRealm string, ClientName PrincipalName, ticket Ticket, key EncryptionKey, dcIp string) (*TGSRep, error) {
 	auth, err := NewAuthenticator(clientRealm, ClientName)

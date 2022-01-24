@@ -37,12 +37,12 @@ func init() {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(username) > 0 {
-				tgt, err := krb5.AskTGT(domain, username, "", nil, paramStringToEType(strings.ToLower(enctype)), dcIp, false)
+				tgt, err := krb5.AskTGT(domain, username, "", nil, paramStringToEType(strings.ToLower(enctype)), dcIp, true, false)
 				if err != nil {
 					return err
 				}
 
-				printTGT(tgt, format, outputFile)
+				printTGT(tgt, format, outputFile, false)
 			} else if len(ldapUser) > 0 && len(ldapPassword) > 0 {
 				ldapClient, err := ldap.NewLDAPClient()
 				if err != nil {
@@ -69,12 +69,13 @@ func init() {
 					currentUser := entry["sAMAccountName"]
 					fmt.Printf("Found user: %s\n", currentUser)
 
-					tgt, err := krb5.AskTGT(domain, currentUser, "", nil, paramStringToEType(strings.ToLower(enctype)), dcIp, false)
+					tgt, err := krb5.AskTGT(domain, currentUser, "", nil, paramStringToEType(strings.ToLower(enctype)), dcIp, true, false)
 					if err != nil {
 						fmt.Printf("Cannot ask a TGT for the user %s: %s\n", currentUser, err)
 					}
 
-					printTGT(tgt, format, "")
+					// Don't save the TGT to kirbi file when using LDAP
+					printTGT(tgt, format, "", false)
 				}
 			} else {
 				return fmt.Errorf("Please specify a target user or a valid LDAP creential.")

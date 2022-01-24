@@ -17,11 +17,12 @@ func init() {
 	var ticket string
 	var key string
 	var keyBytes []byte
-	var request string
+	var service string
 	var enctype string
 	var dcIp string
+	var outputFile string
 
-	var askTgtCmd = &cobra.Command{
+	var askTgsCmd = &cobra.Command{
 		Use:   "asktgs",
 		Short: "Ask a TGS to the KDC",
 		Long:  `Ask a TGS to the KDC`,
@@ -43,14 +44,14 @@ func init() {
 				return fmt.Errorf("enctype value is not valid.")
 			}
 
-			if len(request) == 0 {
-				return fmt.Errorf("Please specify a username to request the TGS.")
+			if len(service) == 0 {
+				return fmt.Errorf("Please specify a SPN.")
 			}
 
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cred := &krb5.KRBCred{}
+			tgtCred := &krb5.KRBCred{}
 
 			if len(ticket) > 0 {
 				kirbi, err := krb5.NewKrbCredFromFile(ticket)
@@ -58,39 +59,54 @@ func init() {
 					return fmt.Errorf("Cannot load kirbi: %s", err)
 				}
 
-				cred = kirbi
+				tgtCred = kirbi
 			} else {
-				tgt, err := krb5.AskTGT(domain, username, password, keyBytes, paramStringToEType(strings.ToLower(enctype)), dcIp, false)
+				tgt, err := krb5.AskTGT(domain, username, password, keyBytes, paramStringToEType(strings.ToLower(enctype)), dcIp, false, false)
 				if err != nil {
 					return fmt.Errorf("Cannot ask TGT: %s", err)
 				}
 
-				cred = tgt.Credentials()
+				tgtCred = tgt.Credentials()
 			}
 
 			principalName := krb5.PrincipalName{
-				NameType:   krb5.KRB_NT_MS_PRINCIPAL,
-				NameString: []string{fmt.Sprintf("%s\\%s", domain, "karen")},
+				NameType:   krb5.KRB_NT_SRV_INST,
+				NameString: []string{service},
 			}
 
-			tgs, err := krb5.AskTGSWithKirbi(domain, principalName, cred, dcIp)
+			tgs, err := krb5.AskTGSWithKirbi(domain, principalName, tgtCred, dcIp)
 			if err != nil {
-				return fmt.Errorf("Cannot ask TGS: %s", err)
+				return fmt.Errorf("Cannot ask TGS for SPN %s: %s", service, err)
 			}
 
-			fmt.Printf("%s\n", tgs.HashString("karen", "ubh.lab/karen"))
+			tgsCred := tgs.Credentials()
+			if len(outputFile) > 0 {
+				if err := tgsCred.SaveToFile(outputFile); err != nil {
+					return err
+				}
+				fmt.Printf("TGS saved to %s.\n", outputFile)
+			} else {
+				b64, err := tgsCred.Base64()
+				if err != nil {
+					return fmt.Errorf("Cannot encode TGS to base64: %s", err)
+				}
+
+				fmt.Printf("%s\n", b64)
+			}
 
 			return nil
 		},
 	}
-	askTgtCmd.Flags().StringVarP(&domain, "domain", "d", "", "Domain to target")
-	askTgtCmd.Flags().StringVarP(&username, "username", "u", "", "Username of the targeted user")
-	askTgtCmd.Flags().StringVarP(&password, "password", "p", "", "Password of the targeted user")
-	askTgtCmd.Flags().StringVarP(&ticket, "ticket", "t", "", "Kirbi file containing a TGT")
-	askTgtCmd.Flags().StringVarP(&key, "key", "k", "", "Secret key of the targeted user (derivated from password)")
-	askTgtCmd.Flags().StringVarP(&request, "request", "r", "", "Ask a TGS for this user")
-	askTgtCmd.Flags().StringVarP(&enctype, "enctype", "e", "aes256", "Encryption type: rc4, aes128 or aes256")
-	askTgtCmd.Flags().StringVarP(&dcIp, "dc-ip", "", "", "IP of the KDC (Domain controler)")
 
-	Command.AddCommand(askTgtCmd)
+	askTgsCmd.Flags().StringVarP(&domain, "domain", "d", "", "Domain to target")
+	askTgsCmd.Flags().StringVarP(&username, "username", "u", "", "Username of the targeted user")
+	askTgsCmd.Flags().StringVarP(&password, "password", "p", "", "Password of the targeted user")
+	askTgsCmd.Flags().StringVarP(&ticket, "ticket", "t", "", "Kirbi file containing a TGT")
+	askTgsCmd.Flags().StringVarP(&key, "key", "k", "", "Secret key of the targeted user (derivated from password)")
+	askTgsCmd.Flags().StringVarP(&service, "service", "s", "", "Ask a TGS for this SPN")
+	askTgsCmd.Flags().StringVarP(&enctype, "enctype", "e", "aes256", "Encryption type: rc4, aes128 or aes256")
+	askTgsCmd.Flags().StringVarP(&dcIp, "dc-ip", "", "", "IP of the KDC (Domain controler)")
+	askTgsCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Output the TGS to a kirbi file")
+
+	Command.AddCommand(askTgsCmd)
 }

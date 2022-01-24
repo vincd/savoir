@@ -150,15 +150,15 @@ func (k *ASRep) HashcatString() string {
 	return fmt.Sprintf("$krb5asrep$%d$%s@%s:%x$%x", k.KDCRep.EncPart.EType, k.KDCRep.CName.NameString[0], k.KDCRep.CRealm, k.KDCRep.EncPart.Cipher[0:16], k.KDCRep.EncPart.Cipher[16:])
 }
 
-func (k *ASRep) Credentials() *KRBCred {
-	info := k.KDCRep.DecryptedEncPart.KrbCredInfo()
+func (k *KDCRep) Credentials() *KRBCred {
+	info := k.DecryptedEncPart.KrbCredInfo()
 	info.PRealm = k.CRealm
 	info.PName = k.CName
 
 	cred := &KRBCred{
 		PVNO:    PVNO,
 		MsgType: KRB_CRED,
-		Tickets: []Ticket{k.KDCRep.Ticket},
+		Tickets: []Ticket{k.Ticket},
 		DecryptedEncPart: EncKrbCredPart{
 			TicketInfo: []KrbCredInfo{info},
 		},
@@ -222,5 +222,4 @@ func (k *TGSRep) HashString(username string, spn string) string {
 	} else {
 		return fmt.Sprintf("The cipher \"%s\" is not supported.", crypto.ETypeToString(eType))
 	}
-
 }

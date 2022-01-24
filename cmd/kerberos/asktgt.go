@@ -31,20 +31,28 @@ func paramStringToEType(enctype string) int32 {
 	return encTypeMapping["aes256"]
 }
 
-func printTGT(tgt *krb5.ASRep, format string, outputFile string) error {
+func printTGT(tgt *krb5.ASRep, format string, outputFile string, shouldPrint bool) error {
 	if format == "john" {
 		fmt.Printf("%s\n", tgt.JohnString())
 	} else if format == "hashcat" {
 		fmt.Printf("%s\n", tgt.HashcatString())
 	}
 
+	cred := tgt.Credentials()
 	if len(outputFile) > 0 {
-		cred := tgt.Credentials()
 		if err := cred.SaveToFile(outputFile); err != nil {
 			return err
 		}
 
 		fmt.Printf("TGT saved to %s.\n", outputFile)
+	}
+
+	if shouldPrint {
+		kirbi64, err := cred.Base64()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%s\n", kirbi64)
 	}
 
 	return nil
@@ -91,12 +99,12 @@ func init() {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			tgt, err := krb5.AskTGT(domain, username, password, keyBytes, paramStringToEType(strings.ToLower(enctype)), dcIp, noPac)
+			tgt, err := krb5.AskTGT(domain, username, password, keyBytes, paramStringToEType(strings.ToLower(enctype)), dcIp, false, noPac)
 			if err != nil {
 				return err
 			}
 
-			printTGT(tgt, format, outputFile)
+			printTGT(tgt, format, outputFile, true)
 
 			return nil
 		},
