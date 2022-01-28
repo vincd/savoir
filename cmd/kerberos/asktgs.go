@@ -10,6 +10,28 @@ import (
 	"github.com/vincd/savoir/modules/paquet/krb5"
 )
 
+func printTGS(tgs *krb5.TGSRep, outputFile string, shouldPrint bool) error {
+	cred := tgs.Credentials()
+	if len(outputFile) > 0 {
+		if err := cred.SaveToFile(outputFile); err != nil {
+			return err
+		}
+
+		fmt.Printf("TGS saved to %s.\n", outputFile)
+	}
+
+	if shouldPrint {
+		kirbi64, err := cred.Base64()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%s\n", cred)
+		fmt.Printf("%s\n", kirbi64)
+	}
+
+	return nil
+}
+
 func init() {
 	var domain string
 	var username string
@@ -79,20 +101,7 @@ func init() {
 				return fmt.Errorf("Cannot ask TGS for SPN %s: %s", service, err)
 			}
 
-			tgsCred := tgs.Credentials()
-			if len(outputFile) > 0 {
-				if err := tgsCred.SaveToFile(outputFile); err != nil {
-					return err
-				}
-				fmt.Printf("TGS saved to %s.\n", outputFile)
-			} else {
-				b64, err := tgsCred.Base64()
-				if err != nil {
-					return fmt.Errorf("Cannot encode TGS to base64: %s", err)
-				}
-
-				fmt.Printf("%s\n", b64)
-			}
+			printTGS(tgs, outputFile, true)
 
 			return nil
 		},
