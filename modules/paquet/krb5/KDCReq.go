@@ -11,6 +11,28 @@ import (
 	"github.com/vincd/savoir/utils/asn1"
 )
 
+// KDCOptions for ASReq and TGSReq
+const (
+	KDCFlagsReserved                = 0
+	KDCFlagsForwardable             = 1
+	KDCFlagsForwarded               = 2
+	KDCFlagsProxiable               = 3
+	KDCFlagsProxy                   = 4
+	KDCFlagsAllowPostDate           = 5
+	KDCFlagsPostdated               = 6
+	KDCFlagsRenewable               = 8
+	KDCFlagsOptHardwareAuth         = 11
+	KDCFlagsConstrainedDelegation   = 14
+	KDCFlagsCanonicalize            = 15
+	KDCFlagsRequestAnonymous        = 16
+	KDCFlagsCNameInAdditionalTicket = 17
+	KDCFlagsDisableTransitedCheck   = 26
+	KDCFlagsRenewableOK             = 27
+	KDCFlagsEncTktInSkey            = 28
+	KDCFlagsRenew                   = 30
+	KDCFlagsValidate                = 31
+)
+
 // https://datatracker.ietf.org/doc/html/rfc4120#section-5.4.1
 type ASReq struct {
 	KDCReq
@@ -64,6 +86,17 @@ type KDCReqBody struct {
 	Addresses         []HostAddress  `asn1:"explicit,optional,tag:9"`
 	EncAuthData       EncryptedData  `asn1:"explicit,optional,tag:10"`
 	AdditionalTickets []Ticket       `asn1:"explicit,optional,tag:11"`
+}
+
+func NewKDCOptions() asn1.BitString {
+	kOptions := NewKerberosFlags()
+
+	// Default kOptions flags
+	SetKerberosFlag(&kOptions, KDCFlagsForwardable)
+	SetKerberosFlag(&kOptions, KDCFlagsRenewable)
+	SetKerberosFlag(&kOptions, KDCFlagsRenewableOK)
+
+	return kOptions
 }
 
 func NewASReq(realm string, cname PrincipalName, sname PrincipalName, kFlags asn1.BitString, encType int32) (*ASReq, error) {

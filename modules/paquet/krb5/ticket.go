@@ -106,9 +106,6 @@ const (
 	TicketFlagHwAuthent               = 11
 	TicketFlagsTransitedPolicyChecked = 12
 	TicketFlagsOkAsDelegate           = 13
-	TicketFlagsLastFlag               = 14
-	TicketFlagsCanonicalize           = 15
-	TicketFlagsRenewableOk            = 27
 )
 
 var ticketFlagsMap = map[int]string{
@@ -132,7 +129,7 @@ func ParseTicketFlags(ticketFlags asn1.BitString) []string {
 	flags := make([]string, 0)
 
 	// Don't loop over the ticketFlagMap to keep the flags order
-	for i := TicketFlagsReserved; i < TicketFlagsLastFlag; i++ {
+	for i := TicketFlagsReserved; i <= TicketFlagsOkAsDelegate; i++ {
 		if ticketFlags.At(i) == 1 {
 			flags = append(flags, ticketFlagsMap[i])
 		}

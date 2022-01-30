@@ -48,10 +48,9 @@ func AskTGT(domain string, username string, password string, key []byte, eTypeVa
 		NameType:   KRB_NT_PRINCIPAL, // KRB_NT_SRV_INST ?
 		NameString: []string{"krbtgt", domain},
 	}
-	kOptions := NewKerberosFlags()
-	SetKerberosFlag(&kOptions, TicketFlagsForwardable)
-	SetKerberosFlag(&kOptions, TicketFlagsRenewable)
-	SetKerberosFlag(&kOptions, TicketFlagsProxiable)
+	// TODO: KDCOptions depends on how we want to ask the ticket
+	kOptions := NewKDCOptions()
+	SetKerberosFlag(&kOptions, KDCFlagsProxiable)
 
 	req, err := NewASReq(domain, clientName, serverName, kOptions, eType.GetEtype())
 	if err != nil {
@@ -221,11 +220,9 @@ func AskTGS(domain string, serverName PrincipalName, clientRealm string, ClientN
 		return nil, fmt.Errorf("Cannot generate APReq: %s", err)
 	}
 
-	kOptions := NewKerberosFlags()
-	SetKerberosFlag(&kOptions, TicketFlagsForwardable)
-	SetKerberosFlag(&kOptions, TicketFlagsRenewable)
-	SetKerberosFlag(&kOptions, TicketFlagsRenewableOk)
-	SetKerberosFlag(&kOptions, TicketFlagsCanonicalize)
+	// TODO: KDCOptions depends on how we want to ask the ticket
+	kOptions := NewKDCOptions()
+	SetKerberosFlag(&kOptions, KDCFlagsCanonicalize)
 
 	encTypes := []int32{key.KeyType}
 	tgsReq, err := NewTGSReq(apReq, domain, PrincipalName{}, serverName, kOptions, encTypes)
