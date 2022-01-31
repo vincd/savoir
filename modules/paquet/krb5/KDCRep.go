@@ -62,11 +62,11 @@ type EncKDCRepPart struct {
 }
 
 func (k *EncKDCRepPart) Marshal() ([]byte, error) {
-	return nil, fmt.Errorf("The method EncKDCRepPart::Marshal is not implemented")
+	return nil, fmt.Errorf("EncKDCRepPart::Marshal is not implemented")
 }
 
 func (k *EncKDCRepPart) Unarshal(b []byte) error {
-	return fmt.Errorf("The method EncKDCRepPart::Unarshal is not implemented")
+	return fmt.Errorf("EncKDCRepPart::Unarshal is not implemented")
 }
 
 func (k *EncKDCRepPart) KrbCredInfo() KrbCredInfo {
@@ -83,7 +83,7 @@ func (k *EncKDCRepPart) KrbCredInfo() KrbCredInfo {
 }
 
 func (k *ASRep) Marshal() ([]byte, error) {
-	return nil, fmt.Errorf("The method ASRep::Marshal is not implemented")
+	return nil, fmt.Errorf("ASRep::Marshal is not implemented")
 }
 
 func (k *ASRep) Unmarshal(b []byte) error {
@@ -168,7 +168,7 @@ func (k *KDCRep) Credentials() *KRBCred {
 }
 
 func (k *TGSRep) Marshal() ([]byte, error) {
-	return nil, fmt.Errorf("The method TGSRep::Marshal is not implemented")
+	return nil, fmt.Errorf("TGSRep::Marshal is not implemented")
 }
 
 func (k *TGSRep) Unmarshal(b []byte) error {

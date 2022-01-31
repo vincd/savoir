@@ -2,6 +2,7 @@ package kerberos
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -66,7 +67,7 @@ func init() {
 
 			principalName := krb5.PrincipalName{
 				NameType:   krb5.KRB_NT_SRV_INST,
-				NameString: []string{service},
+				NameString: strings.Split(service, "/"),
 			}
 
 			fmt.Printf("[*] Asking TGS for principal: %s\n", service)

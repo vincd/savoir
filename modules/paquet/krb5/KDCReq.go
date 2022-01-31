@@ -103,8 +103,14 @@ func NewASReq(realm string, cname PrincipalName, sname PrincipalName, kFlags asn
 	now := time.Now().UTC()
 	nonce, err := rand.Int(rand.Reader, big.NewInt(math.MaxInt32))
 	if err != nil {
-		return nil, fmt.Errorf("Cannot generate nonce: %s", err)
+		return nil, fmt.Errorf("cannot generate nonce: %s", err)
 	}
+
+	// TODO: Rubeus and Kekeo use 20370913024805Z as Till, but why ?
+	// till, err := time.Parse("20060102150405Z", "20370913024805Z")
+	// if err != nil {
+	// 	return nil, fmt.Errorf("cannot parse till date: %s", err)
+	// }
 
 	req := &ASReq{
 		KDCReq{
@@ -163,7 +169,7 @@ func (k *ASReq) Unmarshal(b []byte) error {
 	k.PVNO = m.PVNO
 
 	if err := k.ReqBody.Unmarshal(m.ReqBody.Bytes); err != nil {
-		return fmt.Errorf("Cannot unmarshal AS_REQ body: %s", err)
+		return fmt.Errorf("cannot unmarshal AS_REQ body: %s", err)
 	}
 
 	return nil
@@ -182,7 +188,7 @@ func NewTGSReq(apReq *APReq, realm string, cname PrincipalName, sname PrincipalN
 	now := time.Now().UTC()
 	nonce, err := rand.Int(rand.Reader, big.NewInt(math.MaxInt32))
 	if err != nil {
-		return nil, fmt.Errorf("Cannot generate nonce: %s", err)
+		return nil, fmt.Errorf("cannot generate nonce: %s", err)
 	}
 
 	req := &TGSReq{
@@ -260,12 +266,12 @@ func (k *KDCReqBody) Marshal() ([]byte, error) {
 func (k *KDCReqBody) Unmarshal(b []byte) error {
 	m := &marshalKDCReqBody{}
 	if _, err := asn1.Unmarshal(b, &m); err != nil {
-		return fmt.Errorf("Cannot unmarshal KDC_REQ body: %s", err)
+		return fmt.Errorf("cannot unmarshal KDC_REQ body: %s", err)
 	}
 
 	additionalTickets, err := m.AdditionalTickets.Tickets()
 	if err != nil {
-		return fmt.Errorf("Cannot get AdditionalTickets: %s", err)
+		return fmt.Errorf("cannot get AdditionalTickets: %s", err)
 	}
 
 	k.KDCOptions = m.KDCOptions

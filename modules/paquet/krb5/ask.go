@@ -21,7 +21,7 @@ func ensureResponseTag(res []byte, expectedTag byte) error {
 
 	// Ensure we have the correct response
 	if resTag != expectedTag {
-		return fmt.Errorf("KGC responds with the tag %d instead of %d.", resTag, expectedTag)
+		return fmt.Errorf("KDC responds with the tag %d instead of %d", resTag, expectedTag)
 	}
 
 	return nil
@@ -32,7 +32,7 @@ func ensureResponseTag(res []byte, expectedTag byte) error {
 //  * noPac: as no-pac to the KDC (not tested)
 func AskTGT(domain string, username string, password string, key []byte, eTypeValue int32, dcIp string, noPreauth bool, noPac bool) (*ASRep, error) {
 	if len(domain) == 0 {
-		return nil, fmt.Errorf("Domain name cannot be empty")
+		return nil, fmt.Errorf("domain name cannot be empty")
 	}
 
 	eType, err := crypto.NewEType(eTypeValue)
@@ -45,12 +45,12 @@ func AskTGT(domain string, username string, password string, key []byte, eTypeVa
 		NameString: []string{username},
 	}
 	serverName := PrincipalName{
-		NameType:   KRB_NT_PRINCIPAL, // KRB_NT_SRV_INST ?
+		NameType:   KRB_NT_SRV_INST,
 		NameString: []string{"krbtgt", domain},
 	}
 	// TODO: KDCOptions depends on how we want to ask the ticket
 	kOptions := NewKDCOptions()
-	SetKerberosFlag(&kOptions, KDCFlagsProxiable)
+	// SetKerberosFlag(&kOptions, KDCFlagsProxiable)
 
 	req, err := NewASReq(domain, clientName, serverName, kOptions, eType.GetEtype())
 	if err != nil {
@@ -79,7 +79,7 @@ func AskTGT(domain string, username string, password string, key []byte, eTypeVa
 			// The response is a valid TGT
 			asRep := &ASRep{}
 			if err := asRep.Unmarshal(res); err != nil {
-				return nil, fmt.Errorf("Cannot unmarshall ASRep with no pre-authentication: %s", err)
+				return nil, fmt.Errorf("cannot unmarshall ASRep with no pre-authentication: %s", err)
 			}
 
 			return asRep, nil
@@ -90,12 +90,12 @@ func AskTGT(domain string, username string, password string, key []byte, eTypeVa
 
 		if resType == TagASREP {
 			if resType != TagASREP {
-				return nil, fmt.Errorf("Unauthenticated AS-Req with no-preauthentication should return AS-Rep, it returns the type %d instead", resType)
+				return nil, fmt.Errorf("unauthenticated AS-Req with no-preauthentication should return AS-Rep, it returns the type %d instead", resType)
 			}
 
 			noPreauthTGT := &ASRep{}
 			if err := noPreauthTGT.Unmarshal(res); err != nil {
-				return nil, fmt.Errorf("Cannot unmarshall ASRep: %s", err)
+				return nil, fmt.Errorf("cannot unmarshall ASRep: %s", err)
 			}
 
 			// The TGT should conatains the informations we need (for AES)
@@ -103,7 +103,7 @@ func AskTGT(domain string, username string, password string, key []byte, eTypeVa
 		} else {
 			// Ensure with have an error because we need a preauthentication
 			if resType != KRB_ERROR {
-				return nil, fmt.Errorf("Unauthenticated AS-Req should return an error, it returns the type %d instead", resType)
+				return nil, fmt.Errorf("unauthenticated AS-Req should return an error, it returns the type %d instead", resType)
 			}
 
 			kError := &KRBError{}
@@ -116,7 +116,7 @@ func AskTGT(domain string, username string, password string, key []byte, eTypeVa
 			} else if kError.ErrorCode == KDC_ERR_C_PRINCIPAL_UNKNOWN {
 				return nil, fmt.Errorf("[KDC_ERR_C_PRINCIPAL_UNKNOWN] KDC does not know client with principal \"%s\"", username)
 			} else if kError.ErrorCode != KDC_ERR_PREAUTH_REQUIRED {
-				return nil, fmt.Errorf("Unauthenticated ASRep returns the error: %s", kError.String())
+				return nil, fmt.Errorf("unauthenticated ASRep returns the error: %s", kError.String())
 			}
 
 			if _, err := asn1.Unmarshal(kError.EData, &paDatas); err != nil {
@@ -131,7 +131,7 @@ func AskTGT(domain string, username string, password string, key []byte, eTypeVa
 			case PA_ETYPE_INFO:
 				et := make([]EtypeInfoEntry, 0)
 				if _, err := asn1.Unmarshal(pa.PADataValue, &et); err != nil {
-					return nil, fmt.Errorf("Cannot unmarshal PA_ETYPE_INFO from PAData: %s", err)
+					return nil, fmt.Errorf("cannot unmarshal PA_ETYPE_INFO from PAData: %s", err)
 				}
 
 				if len(et) != 1 {
@@ -143,7 +143,7 @@ func AskTGT(domain string, username string, password string, key []byte, eTypeVa
 			case PA_ETYPE_INFO2:
 				et2 := make([]EtypeInfo2Entry, 0)
 				if _, err := asn1.Unmarshal(pa.PADataValue, &et2); err != nil {
-					return nil, fmt.Errorf("Cannot unmarshal PA_ETYPE_INFO2 from PAData: %s", err)
+					return nil, fmt.Errorf("cannot unmarshal PA_ETYPE_INFO2 from PAData: %s", err)
 				}
 
 				if len(et2) != 1 {
@@ -184,12 +184,12 @@ func AskTGT(domain string, username string, password string, key []byte, eTypeVa
 	}
 
 	if err := ensureResponseTag(asRepBytes, TagASREP); err != nil {
-		return nil, fmt.Errorf("Authenticated ASRep returns an invalid structure: %s", err)
+		return nil, fmt.Errorf("authenticated ASRep returns an invalid structure: %s", err)
 	}
 
 	tgt := &ASRep{}
 	if err := tgt.Unmarshal(asRepBytes); err != nil {
-		return nil, fmt.Errorf("Cannot unmarshall ASRep: %s", err)
+		return nil, fmt.Errorf("cannot unmarshall ASRep: %s", err)
 	}
 
 	// Decrypt session key
@@ -217,7 +217,7 @@ func AskTGS(domain string, serverName PrincipalName, clientRealm string, ClientN
 
 	apReq, err := NewAPReq(NewKerberosFlags(), ticket, *encryptedAuthenticator)
 	if err != nil {
-		return nil, fmt.Errorf("Cannot generate APReq: %s", err)
+		return nil, fmt.Errorf("cannot generate APReq: %s", err)
 	}
 
 	// TODO: KDCOptions depends on how we want to ask the ticket
@@ -227,7 +227,7 @@ func AskTGS(domain string, serverName PrincipalName, clientRealm string, ClientN
 	encTypes := []int32{key.KeyType}
 	tgsReq, err := NewTGSReq(apReq, domain, PrincipalName{}, serverName, kOptions, encTypes)
 	if err != nil {
-		return nil, fmt.Errorf("Cannot generate TGSReq: %s", err)
+		return nil, fmt.Errorf("cannot generate TGSReq: %s", err)
 	}
 
 	res, err := SendMessage(dcIp, tgsReq)
@@ -236,12 +236,12 @@ func AskTGS(domain string, serverName PrincipalName, clientRealm string, ClientN
 	}
 
 	if err := ensureResponseTag(res, TagTGSREP); err != nil {
-		return nil, fmt.Errorf("TGSReq returns an invalid structure: %s.", err)
+		return nil, fmt.Errorf("TGSReq returns an invalid structure: %s", err)
 	}
 
 	tgs := &TGSRep{}
 	if err := tgs.Unmarshal(res); err != nil {
-		return nil, fmt.Errorf("Cannot unmarshall TGSRep: %s.", err)
+		return nil, fmt.Errorf("cannot unmarshall TGSRep: %s", err)
 	}
 
 	// Decrypt new session key
@@ -251,7 +251,7 @@ func AskTGS(domain string, serverName PrincipalName, clientRealm string, ClientN
 
 	// Check if the KDC supplies the correct SPN
 	if tgs.Ticket.SName.NameString[0] != serverName.NameString[0] {
-		return nil, fmt.Errorf("KDC does not return the correct ServerName, it returns: %s.", tgs.Ticket.SName.NameString)
+		return nil, fmt.Errorf("KDC does not return the correct ServerName, it returns: %s", tgs.Ticket.SName.NameString)
 	}
 
 	return tgs, nil
@@ -263,11 +263,11 @@ func AskTGSWithTGT(domain string, serverName PrincipalName, tgt *ASRep, dcIp str
 
 func AskTGSWithKirbi(domain string, serverName PrincipalName, kirbi *KRBCred, dcIp string) (*TGSRep, error) {
 	if len(kirbi.DecryptedEncPart.TicketInfo) == 0 {
-		return nil, fmt.Errorf("Kirbi file does not have TicketInfo field.")
+		return nil, fmt.Errorf("kirbi file does not have TicketInfo field")
 	}
 
 	if len(kirbi.Tickets) == 0 {
-		return nil, fmt.Errorf("Kirbi file does not have any ticket.")
+		return nil, fmt.Errorf("kirbi file does not have any ticket")
 	}
 
 	info := kirbi.DecryptedEncPart.TicketInfo[0]

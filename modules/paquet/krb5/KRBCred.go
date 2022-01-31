@@ -166,7 +166,7 @@ func (k *KRBCred) SaveToFile(path string) error {
 
 	f, err := os.Create(path)
 	if err != nil {
-		return fmt.Errorf("Cannot create kirbi file %s", err)
+		return fmt.Errorf("cannot create kirbi file %s", err)
 	}
 	defer f.Close()
 
@@ -188,7 +188,7 @@ func (k *KRBCred) Base64() (string, error) {
 
 func NewKrbCredFromFile(path string) (*KRBCred, error) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return nil, fmt.Errorf("The kirbi file \"%s\" does not exists.", path)
+		return nil, fmt.Errorf("kirbi file \"%s\" does not exists", path)
 	}
 
 	buf, err := os.ReadFile(path)

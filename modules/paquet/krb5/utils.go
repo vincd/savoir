@@ -25,7 +25,7 @@ func getStructureTag(b []byte) byte {
 // Unmarshall a structure and check if the message type matchs
 func unmarshalMessage(b []byte, val interface{}, messageType int) error {
 	if _, err := asn1.UnmarshalWithParams(b, val, fmt.Sprintf("application,explicit,tag:%d", messageType)); err != nil {
-		return fmt.Errorf("Cannot Unmarshal message: %s", err)
+		return fmt.Errorf("cannot Unmarshal message: %s", err)
 	}
 
 	elem := reflect.ValueOf(val).Elem()
@@ -34,7 +34,7 @@ func unmarshalMessage(b []byte, val interface{}, messageType int) error {
 		if msgTypeField.IsValid() {
 			msgTypeValue := int(msgTypeField.Int())
 			if msgTypeValue != messageType {
-				return fmt.Errorf("The Message Type doesn't match: %d != %d", msgTypeValue, messageType)
+				return fmt.Errorf("message-type doesn't match: %d != %d", msgTypeValue, messageType)
 			}
 		}
 	}
