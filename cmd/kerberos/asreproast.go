@@ -34,10 +34,6 @@ func init() {
 				return err
 			}
 
-			if err := validateETypeFlag(enctype); err != nil {
-				return err
-			}
-
 			if len(user) == 0 && len(ldapUser) == 0 {
 				return fmt.Errorf("flag --user or --ldap-user should be set")
 			}
