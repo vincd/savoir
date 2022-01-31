@@ -1,36 +1,12 @@
 package kerberos
 
 import (
-	"encoding/hex"
 	"fmt"
-	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/vincd/savoir/modules/paquet/krb5"
 )
-
-func printTGS(tgs *krb5.TGSRep, outputFile string, shouldPrint bool) error {
-	cred := tgs.Credentials()
-	if len(outputFile) > 0 {
-		if err := cred.SaveToFile(outputFile); err != nil {
-			return err
-		}
-
-		fmt.Printf("TGS saved to %s.\n", outputFile)
-	}
-
-	if shouldPrint {
-		kirbi64, err := cred.Base64()
-		if err != nil {
-			return err
-		}
-		fmt.Printf("%s\n", cred)
-		fmt.Printf("%s\n", kirbi64)
-	}
-
-	return nil
-}
 
 func init() {
 	var domain string
@@ -38,7 +14,6 @@ func init() {
 	var password string
 	var ticket string
 	var key string
-	var keyBytes []byte
 	var service string
 	var enctype string
 	var dcIp string
@@ -48,44 +23,42 @@ func init() {
 		Use:   "asktgs",
 		Short: "Ask a TGS to the KDC",
 		Long:  `Ask a TGS to the KDC`,
-		Args: func(cmd *cobra.Command, args []string) error {
-			if len(password) > 0 && len(key) > 0 {
-				return fmt.Errorf("Please specify the user password OR a derivated key.")
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if err := validateDomainUserFlagsWithTicket(username, password, key, ticket); err != nil {
+				return err
 			}
 
-			if len(key) > 0 {
-				b, err := hex.DecodeString(key)
-				if err != nil {
-					return fmt.Errorf("Cannot unhexlify key value.")
-				}
-
-				keyBytes = b
-			}
-
-			if _, ok := encTypeMapping[strings.ToLower(enctype)]; !ok {
-				return fmt.Errorf("enctype value is not valid.")
+			if err := validateETypeFlag(enctype); err != nil {
+				return err
 			}
 
 			if len(service) == 0 {
-				return fmt.Errorf("Please specify a SPN.")
+				return fmt.Errorf("flag --service cannot be empty")
 			}
 
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			tgtCred := &krb5.KRBCred{}
+			var tgtCred *krb5.KRBCred
 
 			if len(ticket) > 0 {
+				fmt.Printf("[*] Use a kirbi file as credentials\n")
 				kirbi, err := krb5.NewKrbCredFromFile(ticket)
 				if err != nil {
-					return fmt.Errorf("Cannot load kirbi: %s", err)
+					return fmt.Errorf("cannot load kirbi: %s", err)
 				}
 
 				tgtCred = kirbi
 			} else {
-				tgt, err := krb5.AskTGT(domain, username, password, keyBytes, paramStringToEType(strings.ToLower(enctype)), dcIp, false, false)
+				keyBytes, err := getKeyFlagValue(key)
 				if err != nil {
-					return fmt.Errorf("Cannot ask TGT: %s", err)
+					return err
+				}
+
+				fmt.Printf("[*] Use username and password/key as credentials\n")
+				tgt, err := krb5.AskTGT(domain, username, password, keyBytes, getETypeFromFlagValue(enctype), dcIp, false, false)
+				if err != nil {
+					return fmt.Errorf("cannot ask TGT: %s", err)
 				}
 
 				tgtCred = tgt.Credentials()
@@ -96,25 +69,32 @@ func init() {
 				NameString: []string{service},
 			}
 
+			fmt.Printf("[*] Asking TGS for principal: %s\n", service)
 			tgs, err := krb5.AskTGSWithKirbi(domain, principalName, tgtCred, dcIp)
 			if err != nil {
-				return fmt.Errorf("Cannot ask TGS for SPN %s: %s", service, err)
+				return fmt.Errorf("cannot ask TGS for principal %s: %s", service, err)
 			}
 
-			printTGS(tgs, outputFile, true)
+			cred := tgs.Credentials()
+			fmt.Printf("%s\n", cred.DisplayTicket(true, false))
+
+			if len(outputFile) > 0 {
+				if err := cred.SaveToFile(outputFile); err != nil {
+					return err
+				}
+
+				fmt.Printf("[*] TGS saved to %s.\n", outputFile)
+			}
 
 			return nil
 		},
 	}
 
-	askTgsCmd.Flags().StringVarP(&domain, "domain", "d", "", "Domain to target")
-	askTgsCmd.Flags().StringVarP(&username, "username", "u", "", "Username of the targeted user")
-	askTgsCmd.Flags().StringVarP(&password, "password", "p", "", "Password of the targeted user")
-	askTgsCmd.Flags().StringVarP(&ticket, "ticket", "t", "", "Kirbi file containing a TGT")
-	askTgsCmd.Flags().StringVarP(&key, "key", "k", "", "Secret key of the targeted user (derivated from password)")
+	commandAddKerberosDomainFlags(askTgsCmd, &domain, &dcIp)
+	commandAddDomainUserFlagsWithTicket(askTgsCmd, &username, &password, &key, &ticket)
+	commandAddKerberosETypeFlag(askTgsCmd, &enctype)
 	askTgsCmd.Flags().StringVarP(&service, "service", "s", "", "Ask a TGS for this SPN")
-	askTgsCmd.Flags().StringVarP(&enctype, "enctype", "e", "aes256", "Encryption type: rc4, aes128 or aes256")
-	askTgsCmd.Flags().StringVarP(&dcIp, "dc-ip", "", "", "IP of the KDC (Domain controler)")
+	cobra.MarkFlagRequired(askTgsCmd.Flags(), "service")
 	askTgsCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Output the TGS to a kirbi file")
 
 	Command.AddCommand(askTgsCmd)

@@ -16,7 +16,7 @@ func init() {
 		Use:   "describe",
 		Short: "Parse a kirbi file",
 		Long:  `Parse a kirbi file`,
-		Args: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {

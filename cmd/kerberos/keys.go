@@ -12,12 +12,12 @@ import (
 func printKey(eType int32, password string, salt string, s2kp string) {
 	et, err := crypto.NewEType(eType)
 	if err != nil {
-		fmt.Printf("Cannot get Encryption Type: %s\n", err)
+		fmt.Printf("[!] Cannot get Encryption Type: %s\n", err)
 	}
 
 	key, err := et.GenerateSecretkey(password, salt, string(s2kp))
 	if err != nil {
-		fmt.Printf("Cannot generate key for EType: %s\n", crypto.ETypeToString(et.GetEtype()))
+		fmt.Printf("[!] Cannot generate key for EType: %s\n", crypto.ETypeToString(et.GetEtype()))
 	}
 
 	fmt.Printf("%s\n", crypto.ETypeToString(et.GetEtype()))
@@ -35,7 +35,7 @@ func init() {
 		Use:   "keys",
 		Short: "Computes Kerberos keys",
 		Long:  `Computes Kerberos keys from a given password using Kerberos version 5 Key Derivation Functions (RC4_HMAC, AES128_CTS_HMAC_SHA1_96 and AES256_CTS_HMAC_SHA1_96).`,
-		Args: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {

