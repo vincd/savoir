@@ -52,13 +52,14 @@ type EncKrbCredPart struct {
 }
 
 func (k *KRBCred) String() string {
-	return k.DisplayTicket(false, false)
+	return k.DisplayTicket(false, false, nil)
 }
 
 // Return a Rubeus style output: `LSA.DisplayTicket`
 //  * displayB64ticket: display the ticket encoded as base64
 //  * nowrap: don't wrap the base64 ticket output
-func (k *KRBCred) DisplayTicket(displayB64ticket bool, nowrap bool) string {
+//  * serviceKey: key to decrypt PAC informations
+func (k *KRBCred) DisplayTicket(displayB64ticket bool, nowrap bool, serviceKey []byte) string {
 	if k.DecryptedEncPart.TicketInfo == nil || len(k.DecryptedEncPart.TicketInfo) == 0 {
 		return "[!] Credential is empty."
 	}
@@ -101,7 +102,85 @@ func (k *KRBCred) DisplayTicket(displayB64ticket bool, nowrap bool) string {
 		}
 	}
 
-	// TODO: serviceKey && PAC
+	if len(serviceKey) > 0 {
+		if err := k.Tickets[0].Decrypt(serviceKey, KeyUsageAsRepTgsRepTicket); err != nil {
+			s += fmt.Sprintf("[!] Error decoding PAC: %s", err)
+		} else {
+			pacType, err := k.Tickets[0].GetPacType()
+			if err != nil {
+				s += fmt.Sprintf("[!] Error getting PacType: %s", err)
+			} else {
+				s += "Decrypted PAC                  :\n"
+
+				if pacType.ValidationInfo != nil {
+					groups := make([]string, 0)
+					for _, groupId := range pacType.ValidationInfo.GroupIDs {
+						groups = append(groups, fmt.Sprintf("%d", groupId.RelativeID))
+					}
+
+					extraSids := make([]string, 0)
+					for _, extraSid := range pacType.ValidationInfo.ExtraSIDs {
+						extraSids = append(extraSids, extraSid.SID.String())
+					}
+
+					resourceGroupIDs := make([]string, 0)
+					for _, resourceGroupID := range pacType.ValidationInfo.ResourceGroupIDs {
+						resourceGroupIDs = append(resourceGroupIDs, fmt.Sprintf("%d", resourceGroupID.RelativeID))
+					}
+
+					s += "  Logon Info                   :\n"
+					s += fmt.Sprintf("    LogOnTime                  : %s\n", pacType.ValidationInfo.LogOnTime.Time())
+					s += fmt.Sprintf("    LogOffTime                 : %s\n", pacType.ValidationInfo.LogOffTime.Time())
+					s += fmt.Sprintf("    KickOffTime                : %s\n", pacType.ValidationInfo.KickOffTime.Time())
+					s += fmt.Sprintf("    PasswordLastSet            : %s\n", pacType.ValidationInfo.PasswordLastSet.Time())
+					s += fmt.Sprintf("    PasswordCanChange          : %s\n", pacType.ValidationInfo.PasswordCanChange.Time())
+					s += fmt.Sprintf("    PasswordMustChange         : %s\n", pacType.ValidationInfo.PasswordMustChange.Time())
+					s += fmt.Sprintf("    EffectiveName              : %s\n", pacType.ValidationInfo.EffectiveName.Value)
+					s += fmt.Sprintf("    FullName                   : %s\n", pacType.ValidationInfo.FullName.Value)
+					s += fmt.Sprintf("    LogonScript                : %s\n", pacType.ValidationInfo.LogonScript.Value)
+					s += fmt.Sprintf("    ProfilePath                : %s\n", pacType.ValidationInfo.ProfilePath.Value)
+					s += fmt.Sprintf("    HomeDirectory              : %s\n", pacType.ValidationInfo.HomeDirectory.Value)
+					s += fmt.Sprintf("    HomeDirectoryDrive         : %s\n", pacType.ValidationInfo.HomeDirectoryDrive.Value)
+					s += fmt.Sprintf("    LogonCount                 : %d\n", pacType.ValidationInfo.LogonCount)
+					s += fmt.Sprintf("    BadPasswordCount           : %d\n", pacType.ValidationInfo.BadPasswordCount)
+					s += fmt.Sprintf("    UserID                     : %d\n", pacType.ValidationInfo.UserID)
+					s += fmt.Sprintf("    PrimaryGroupID             : %d\n", pacType.ValidationInfo.PrimaryGroupID)
+					s += fmt.Sprintf("    GroupCount                 : %d\n", pacType.ValidationInfo.GroupCount)
+					s += fmt.Sprintf("    Groups                     : %s\n", strings.Join(groups, ", "))
+					s += fmt.Sprintf("    UserFlags                  : %d\n", pacType.ValidationInfo.UserFlags)
+					s += fmt.Sprintf("    UserSessionKey             : %x\n", pacType.ValidationInfo.UserSessionKey.CypherBlock[0].Data)
+					s += fmt.Sprintf("    LogonServer                : %s\n", pacType.ValidationInfo.LogonServer.Value)
+					s += fmt.Sprintf("    LogonDomainName            : %s\n", pacType.ValidationInfo.LogonDomainName.Value)
+					s += fmt.Sprintf("    LogonDomainID              : %s\n", pacType.ValidationInfo.LogonDomainID.String())
+					s += fmt.Sprintf("    UserAccountControl         : %d\n", pacType.ValidationInfo.UserAccountControl)
+					s += fmt.Sprintf("    SubAuthStatus              : %d\n", pacType.ValidationInfo.SubAuthStatus)
+					s += fmt.Sprintf("    LastSuccessfulILogon       : %s\n", pacType.ValidationInfo.LastSuccessfulILogon.Time())
+					s += fmt.Sprintf("    LastFailedILogon           : %s\n", pacType.ValidationInfo.LastFailedILogon.Time())
+					s += fmt.Sprintf("    FailedILogonCount          : %d\n", pacType.ValidationInfo.FailedILogonCount)
+					s += fmt.Sprintf("    SIDCount                   : %d\n", pacType.ValidationInfo.SIDCount)
+					s += fmt.Sprintf("    ExtraSIDs                  : %s\n", strings.Join(extraSids, ", "))
+					s += fmt.Sprintf("    ResourceGroupDomainSID     : %s\n", pacType.ValidationInfo.ResourceGroupDomainSID.String())
+					s += fmt.Sprintf("    ResourceGroupCount         : %d\n", pacType.ValidationInfo.ResourceGroupCount)
+					s += fmt.Sprintf("    ResourceGroupIDs           : %s\n", strings.Join(resourceGroupIDs, ", "))
+				}
+
+				if pacType.ClientInfo != nil {
+					s += "  ClientName                   :\n"
+					s += fmt.Sprintf("    Client Id                  : %s\n", pacType.ClientInfo.ClientId.Time())
+					s += fmt.Sprintf("    Client Name                : %s\n", pacType.ClientInfo.Name)
+				}
+
+				if pacType.UpnDnsInfo != nil {
+					s += "  UpnDns                       :\n"
+					s += fmt.Sprintf("    DNS Domain Name            : %s\n", pacType.UpnDnsInfo.DNSDomainName)
+					s += fmt.Sprintf("    IUPN                       : %s\n", pacType.UpnDnsInfo.UPN)
+					s += fmt.Sprintf("    Flags                      : 0x%x\n", pacType.UpnDnsInfo.Flags)
+				}
+
+				// TODO: check PAC signatures
+			}
+		}
+	}
 
 	return s
 }

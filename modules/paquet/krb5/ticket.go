@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/vincd/savoir/modules/paquet/pac"
 	"github.com/vincd/savoir/utils/asn1"
 )
 
@@ -60,6 +61,40 @@ func (t *Ticket) RawValue() (*asn1.RawValue, error) {
 	}
 
 	return r, nil
+}
+
+// Encrypt a Ticket EncPart using the service key
+func (t *Ticket) Encrypt(key []byte, usage uint32) error {
+	return fmt.Errorf("Ticket::Encrypt is not implemented")
+}
+
+// Decrypt a Ticket EncPart using the service key
+func (t *Ticket) Decrypt(key []byte, usage uint32) error {
+	decryptedData, err := t.EncPart.Decrypt(key, usage)
+	if err != nil {
+		return err
+	}
+
+	if err := unmarshalMessage(decryptedData, &t.DecryptedEncPart, TagEncTicketPart); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Parse AuthorizationData to get PacType from Ticket
+func (t *Ticket) GetPacType() (*pac.PacType, error) {
+	ifRelevant, err := t.DecryptedEncPart.AuthorizationData.GetIfRelevant()
+	if err != nil {
+		return nil, fmt.Errorf("cannot get IfRelevant from ticket: %s", err)
+	}
+
+	pacType, err := ifRelevant.GetWin2kPac()
+	if err != nil {
+		return nil, fmt.Errorf("cannot get Win2kPac from ticket: %s", err)
+	}
+
+	return pacType, nil
 }
 
 func (s SequenceOfRawTickets) Tickets() ([]Ticket, error) {

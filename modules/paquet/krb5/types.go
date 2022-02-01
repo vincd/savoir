@@ -14,14 +14,6 @@ type HostAddress struct {
 
 type HostAddresses []HostAddress
 
-// https://datatracker.ietf.org/doc/html/rfc4120#section-5.2.6
-type AuthorizationDataEntry struct {
-	ADType int32  `asn1:"explicit,tag:0"`
-	ADData []byte `asn1:"explicit,tag:1"`
-}
-
-type AuthorizationData []AuthorizationDataEntry
-
 // https://datatracker.ietf.org/doc/html/rfc4120#section-5.10
 const (
 	TagTicket         = 1

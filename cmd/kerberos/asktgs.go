@@ -1,6 +1,7 @@
 package kerberos
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -19,6 +20,8 @@ func init() {
 	var enctype string
 	var dcIp string
 	var outputFile string
+	var serviceKey string
+	var serviceKeyBytes []byte
 
 	var askTgsCmd = &cobra.Command{
 		Use:   "asktgs",
@@ -36,6 +39,12 @@ func init() {
 			if len(service) == 0 {
 				return fmt.Errorf("flag --service cannot be empty")
 			}
+
+			b, err := hex.DecodeString(serviceKey)
+			if err != nil {
+				return fmt.Errorf("flag --service-key is not a valid hex string")
+			}
+			serviceKeyBytes = b
 
 			return nil
 		},
@@ -77,7 +86,7 @@ func init() {
 			}
 
 			cred := tgs.Credentials()
-			fmt.Printf("%s\n", cred.DisplayTicket(true, false))
+			fmt.Printf("%s\n", cred.DisplayTicket(true, false, serviceKeyBytes))
 
 			if len(outputFile) > 0 {
 				if err := cred.SaveToFile(outputFile); err != nil {
@@ -97,6 +106,7 @@ func init() {
 	askTgsCmd.Flags().StringVarP(&service, "service", "s", "", "Ask a TGS for this SPN")
 	cobra.MarkFlagRequired(askTgsCmd.Flags(), "service")
 	askTgsCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Output the TGS to a kirbi file")
+	askTgsCmd.Flags().StringVarP(&serviceKey, "service-key", "", "", "Service Key to decrypt PAC informations")
 
 	Command.AddCommand(askTgsCmd)
 }

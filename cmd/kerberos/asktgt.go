@@ -52,7 +52,7 @@ func init() {
 
 			// Concert to a KRBCred
 			cred := tgt.Credentials()
-			fmt.Printf("%s\n", cred.DisplayTicket(true, false))
+			fmt.Printf("%s\n", cred.DisplayTicket(true, false, nil))
 
 			// We don't print the hashes in `DisplayTicket`
 			if format == "john" {
