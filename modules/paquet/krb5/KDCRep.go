@@ -110,7 +110,7 @@ func (k *ASRep) DecryptAsRepPart(key []byte) error {
 	// The key usage value for encrypting this field is 3 in an AS-REP
 	// message, using the client's long-term key or another key selected
 	// via pre-authentication mechanisms.
-	decAsRepPart, err := k.EncPart.Decrypt(key, 3)
+	decAsRepPart, err := k.EncPart.Decrypt(key, KeyUsageAsRepEncryptedPart)
 	if err != nil {
 		return err
 	}

@@ -56,7 +56,7 @@ func NewPADataEncrypted(dataType int32, val interface{}, eType int32, key []byte
 	}
 
 	encryptedTsEncData := EncryptedData{}
-	if err := encryptedTsEncData.Encrypt(eType, key, encodedValue, 1); err != nil {
+	if err := encryptedTsEncData.Encrypt(eType, key, encodedValue, KeyUsageAsReqPaEncTimestamp); err != nil {
 		return nil, err
 	}
 

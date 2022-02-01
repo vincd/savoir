@@ -4,6 +4,14 @@ import (
 	"github.com/vincd/savoir/modules/paquet/krb5/crypto"
 )
 
+// https://datatracker.ietf.org/doc/html/rfc4120#section-7.5.1
+const (
+	KeyUsageAsReqPaEncTimestamp   uint32 = 1
+	KeyUsageAsRepTgsRepTicket     uint32 = 2
+	KeyUsageAsRepEncryptedPart    uint32 = 3
+	KeyUsageTgsReqPaAuthenticator uint32 = 7
+)
+
 // https://datatracker.ietf.org/doc/html/rfc4120#section-5.2.9
 type EncryptedData struct {
 	EType int32 `asn1:"explicit,tag:0"`

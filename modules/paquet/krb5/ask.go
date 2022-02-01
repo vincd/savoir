@@ -210,7 +210,7 @@ func AskTGS(domain string, serverName PrincipalName, clientRealm string, ClientN
 	// encrypted in the ticket's session key, with a key usage value of 11
 	// in normal application exchanges, or 7 when used as the PA-TGS-REQ
 	// PA-DATA field of a TGS-REQ exchange (see Section 5.4.1):
-	encryptedAuthenticator, err := auth.Encrypt(key, 7)
+	encryptedAuthenticator, err := auth.Encrypt(key, KeyUsageTgsReqPaAuthenticator)
 	if err != nil {
 		return nil, err
 	}
