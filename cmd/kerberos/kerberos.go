@@ -38,9 +38,10 @@ func commandAddDomainUserFlagsWithTicket(cmd *cobra.Command, username *string, p
 }
 
 // Add flags to connect to a LDAP endpoint
-func commandAddLDAPFlags(cmd *cobra.Command, username *string, password *string) {
+func commandAddLDAPFlags(cmd *cobra.Command, username *string, password *string, sizeLimit *int) {
 	cmd.Flags().StringVarP(username, "ldap-user", "", "", "Username to connect to LDAP")
 	cmd.Flags().StringVarP(password, "ldap-password", "", "", "Password to connect to LDAP")
+	cmd.Flags().IntVarP(sizeLimit, "ldap-size-limit", "", 1000, "LDAP size limit: if there is more results, there will be discarded")
 	// TODO: add LDAPS & PORT
 }
 

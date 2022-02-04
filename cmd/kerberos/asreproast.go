@@ -15,6 +15,7 @@ func init() {
 	var domain string
 	var ldapUser string
 	var ldapPassword string
+	var ldapSizeLimit int
 	var enctype string
 	var dcIp string
 	var format string
@@ -51,6 +52,7 @@ func init() {
 			if len(user) > 0 {
 				targets = append(targets, user)
 			} else {
+				fmt.Printf("[*] Use LDAP to retreive vulnerable accounts\n")
 				ldapClient, err := ldap.NewLDAPClient()
 				if err != nil {
 					return err
@@ -67,13 +69,13 @@ func init() {
 				}
 
 				query := "(&(UserAccountControl:1.2.840.113556.1.4.803:=4194304)(!(UserAccountControl:1.2.840.113556.1.4.803:=2))(!(objectCategory=computer)))"
-				entries, err := ldapClient.Search(query, []string{"sAMAccountName"}, 1000)
+				entries, err := ldapClient.SearchWithSizeLimit(query, []string{"sAMAccountName"}, ldapSizeLimit)
 				if err != nil {
 					return err
 				}
 
 				for _, entry := range entries {
-					targets = append(targets, entry["sAMAccountName"])
+					targets = append(targets, entry["sAMAccountName"][0])
 				}
 			}
 
@@ -118,7 +120,7 @@ func init() {
 	}
 
 	commandAddKerberosDomainFlags(asRepRoastCmd, &domain, &dcIp)
-	commandAddLDAPFlags(asRepRoastCmd, &ldapUser, &ldapPassword)
+	commandAddLDAPFlags(asRepRoastCmd, &ldapUser, &ldapPassword, &ldapSizeLimit)
 	commandAddKerberosETypeFlagWithDefaultValue(asRepRoastCmd, &enctype, "rc4")
 	commandAddFormatFlag(asRepRoastCmd, &format)
 	asRepRoastCmd.Flags().StringVarP(&user, "user", "", "", "User to roast")

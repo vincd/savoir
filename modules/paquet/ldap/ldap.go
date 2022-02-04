@@ -57,7 +57,29 @@ func (l *LDAPClient) AuthenticateWithDomainAccountAndHash(domain string, usernam
 	return nil
 }
 
-func (l *LDAPClient) Search(searchFilter string, attributes []string, sizeLimit int) ([]map[string]string, error) {
+// Query the LDAP server and returns entries with attributes. Returns sizeLimit results even
+// if there is more results. Returns a slice of map for each attribute pointing to a list of values
+// [
+//     {
+//         "cn": [
+//             "test"
+//         ],
+//         "dn": [
+//             "CN=test,CN=Users,DN=UBH,DN=lab"
+//         ],
+//         "sAMAccountType": [
+//             "805306368"
+//         ],
+//         "samAccountName": [
+//             "test"
+//         ],
+//         "servicePrincipalName": [
+//             "MSSQLSvc/server01.UBH.LAB:1433",
+//             "MSSQLSvc/server02.UBH.LAB:1433",
+//         ]
+//     }
+// ]
+func (l *LDAPClient) SearchWithSizeLimit(searchFilter string, attributes []string, sizeLimit int) ([]map[string][]string, error) {
 	searchRequest := ldapv3.NewSearchRequest(
 		l.Base,
 		ldapv3.ScopeWholeSubtree, ldapv3.NeverDerefAliases, sizeLimit, 0, false,
@@ -68,15 +90,24 @@ func (l *LDAPClient) Search(searchFilter string, attributes []string, sizeLimit 
 
 	sr, err := l.l.Search(searchRequest)
 	if err != nil {
-		return nil, err
+		if ldapv3.IsErrorWithCode(err, ldapv3.LDAPResultReferral) {
+			// We parse the Base from the domain name, then we may have a wrong result here
+			return nil, fmt.Errorf("base DN is not correct (%s), please check the domain provided", l.Base)
+		} else if ldapv3.IsErrorWithCode(err, ldapv3.LDAPResultSizeLimitExceeded) {
+			// We've more results, then ignore this error and parse the entries
+		} else {
+			return nil, fmt.Errorf("cannot search: %s", err)
+		}
 	}
 
-	results := make([]map[string]string, 0)
+	results := make([]map[string][]string, 0)
 	for _, entry := range sr.Entries {
-		result := make(map[string]string)
-		result["dn"] = entry.DN
+		result := make(map[string][]string)
+		result["dn"] = []string{entry.DN}
 		for _, attr := range attributes {
-			result[attr] = entry.GetAttributeValue(attr)
+			// Use FoldAttribute because the attributes are case sensitive
+			// Returns a string slice because some attributs may contains multiple values (servicePrincipalName)
+			result[attr] = entry.GetEqualFoldAttributeValues(attr)
 		}
 
 		results = append(results, result)

