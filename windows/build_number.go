@@ -20,6 +20,7 @@ const (
 	BuildNumberWindows10_1909 BuildNumber = 18363
 	BuildNumberWindows10_2004 BuildNumber = 19041
 	BuildNumberWindows10_20H2 BuildNumber = 19042
+	BuildNumberWindows10_21H1 BuildNumber = 19043
 
 	BuildNumberMinWindowsXP    BuildNumber = 2500
 	BuildNumberMinWindows2K3   BuildNumber = 3000

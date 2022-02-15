@@ -54,3 +54,18 @@ type KiwiCloudApLogonListEntry struct {
 	Unk3                    uint64
 	CacheEntry              binary.Pointer
 }
+
+type KiwiCloudApLogonListEntry21H1 struct {
+	Link ntdll.ListEntry
+	Unk0 uint32
+	Unk1 uint32
+	Unk2 uint32
+	// no align ?
+	LocallyUniqueIdentifier uint64
+	Unk3                    uint32
+	Unk4                    uint32
+	Unk5                    uint32
+	Unk6                    uint32
+	Unk7                    uint32
+	CacheEntry              binary.Pointer
+}

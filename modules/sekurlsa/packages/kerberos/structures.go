@@ -157,17 +157,17 @@ type KiwiKerberosLogonSession10_1607 struct {
 	Unk21                   binary.Pointer
 	Unk22                   binary.Pointer
 	Unk23                   binary.Pointer
-	Unk24                   uint64
-	Unk25                   uint64
-	KeyList                 binary.Pointer
-	Unk26                   binary.Pointer
-	Tickets1                ntdll.ListEntry
-	Unk27                   windows.Filetime
-	Tickets2                ntdll.ListEntry
-	Unk28                   windows.Filetime
-	Tickets3                ntdll.ListEntry
-	Unk29                   windows.Filetime
-	SmartcardInfos          binary.Pointer
+	// Unk24                   binary.Pointer
+	// Unk25                   binary.Pointer
+	KeyList        binary.Pointer
+	Unk26          binary.Pointer
+	Tickets1       ntdll.ListEntry
+	Unk27          windows.Filetime
+	Tickets2       ntdll.ListEntry
+	Unk28          windows.Filetime
+	Tickets3       ntdll.ListEntry
+	Unk29          windows.Filetime
+	SmartcardInfos binary.Pointer
 }
 
 type KiwiKerberosPrimaryCredential10 struct {
@@ -408,7 +408,7 @@ type KiwiKerberosInternalTicket10_1607 struct {
 	Name0               binary.Pointer
 	TicketFlags         uint32
 	Unk2                uint32
-	Unk14393_0          uint32
+	Unk14393_0          binary.Pointer
 	KeyType             uint32
 	_                   uint32
 	Key                 KiwiKerberosBuffer

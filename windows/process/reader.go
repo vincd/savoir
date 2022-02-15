@@ -1,3 +1,6 @@
+//go:build windows
+// +build windows
+
 package process
 
 import (
@@ -39,7 +42,6 @@ func (p Page) String() string {
 func (p Page) read(handle windows.Handle) ([]byte, error) {
 	data, err := kernel32.ReadProcessMemory(handle, p.baseAddress.ToUIntPtr(), uint64(p.size))
 	if err != nil {
-		panic(err)
 		return nil, err
 	}
 

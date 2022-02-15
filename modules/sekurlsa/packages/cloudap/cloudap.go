@@ -25,7 +25,7 @@ func ParseCloudAp(l utils.MemoryReader) ([]*CloudApEntry, error) {
 		return make([]*CloudApEntry, 0), nil
 	}
 
-	cloudapEntry, _, err := globals.FindStructurePointerFromSignature(l, "cloudap.dll", cloudapSignatures)
+	cloudapEntry, reference, err := globals.FindStructurePointerFromSignature(l, "cloudap.dll", cloudapSignatures)
 	if err != nil {
 		return nil, err
 	}
@@ -33,22 +33,32 @@ func ParseCloudAp(l utils.MemoryReader) ([]*CloudApEntry, error) {
 	entries := make([]*CloudApEntry, 0)
 	ptr := *cloudapEntry
 	for ptr > 0 {
-		entry := &KiwiCloudApLogonListEntry{}
-		if err := l.ReadStructure(ptr, entry); err != nil {
+		flink, err := l.ReadPointer(ptr)
+		if err != nil {
 			return nil, err
 		}
 
-		if entry.Link.Flink == *cloudapEntry {
+		if flink == *cloudapEntry {
 			break
 		}
 
-		cloudapEntry := CloudApEntry{
-			AuthenticationId: entry.LocallyUniqueIdentifier,
+		authenticationId, err := l.ReadUInt64(ptr.WithOffset(reference.Offsets[1]))
+		if err != nil {
+			return nil, err
 		}
 
-		if entry.CacheEntry != 0 {
+		cloudapEntry := CloudApEntry{
+			AuthenticationId: authenticationId,
+		}
+
+		cacheEntryPtr, err := l.ReadPointer(ptr.WithOffset(reference.Offsets[2]))
+		if err != nil {
+			return nil, err
+		}
+
+		if cacheEntryPtr != 0 {
 			cacheEntry := &KiwiCloudApCacheListEntry{}
-			if l.ReadStructure(entry.CacheEntry, cacheEntry); err != nil {
+			if l.ReadStructure(cacheEntryPtr, cacheEntry); err != nil {
 				return nil, err
 			}
 
@@ -73,7 +83,7 @@ func ParseCloudAp(l utils.MemoryReader) ([]*CloudApEntry, error) {
 		}
 
 		entries = append(entries, &cloudapEntry)
-		ptr = entry.Link.Flink
+		ptr = flink
 	}
 
 	return entries, nil

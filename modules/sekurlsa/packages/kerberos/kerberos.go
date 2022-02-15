@@ -1,6 +1,8 @@
 package kerberos
 
 import (
+	"fmt"
+
 	"github.com/vincd/savoir/modules/sekurlsa/packages/globals"
 	"github.com/vincd/savoir/utils"
 	"github.com/vincd/savoir/utils/binary"
@@ -86,101 +88,99 @@ func readKerberosBuffer(l utils.MemoryReader, ptr binary.Pointer) ([]byte, error
 }
 
 func parseKerberosTicket(l utils.MemoryReader, reference *globals.Signature, ptr binary.Pointer, group int) (*globals.SavoirKerberosTicket, error) {
-	// utils.DumpMemory(l, ptr, 512)
-
 	startTime, err := l.ReadFileTime(ptr.WithOffset(reference.Offsets[14]))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot parse ticket startTime: %s", err)
 	}
 
 	endTime, err := l.ReadFileTime(ptr.WithOffset(reference.Offsets[15]))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot parse ticket endTime: %s", err)
 	}
 
 	renewUntil, err := l.ReadFileTime(ptr.WithOffset(reference.Offsets[16]))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot parse ticket renewUntil: %s", err)
 	}
 
 	serviceName, err := readKerbExternalNamePointer(l, ptr.WithOffset(reference.Offsets[11]))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot parse ticket serviceName: %s", err)
 	}
 
 	serviceNames, err := readExternalNames(l, serviceName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot parse ticket serviceNames: %s", err)
 	}
 
 	clientName, err := readKerbExternalNamePointer(l, ptr.WithOffset(reference.Offsets[12]))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot parse ticket clientName: %s", err)
 	}
 
 	clientNames, err := readExternalNames(l, clientName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot parse ticket clientNames: %s", err)
 	}
 
 	targetName, err := readKerbExternalNamePointer(l, ptr.WithOffset(reference.Offsets[13]))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot parse ticket targetName: %s", err)
 	}
 
 	targetNames, err := readExternalNames(l, targetName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot parse ticket targetNames: %s", err)
 	}
 
 	domainName, err := ntdll.GetLsaUnicodeStringValue(l, ptr.WithOffset(reference.Offsets[17]))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot parse ticket domainName: %s", err)
 	}
 
 	targetDomainName, err := ntdll.GetLsaUnicodeStringValue(l, ptr.WithOffset(reference.Offsets[18]))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot parse ticket targetDomainName: %s", err)
 	}
 
 	altTargetDomainName, err := ntdll.GetLsaUnicodeStringValue(l, ptr.WithOffset(reference.Offsets[19]))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot parse ticket altTargetDomainName: %s", err)
 	}
 
 	description, err := ntdll.GetLsaUnicodeStringValue(l, ptr.WithOffset(reference.Offsets[20]))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot parse ticket description: %s", err)
 	}
 
 	ticketFlags, err := l.ReadUInt32(ptr.WithOffset(reference.Offsets[21]))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot parse ticket ticketFlags: %s", err)
 	}
 
 	keyType, err := l.ReadUInt32(ptr.WithOffset(reference.Offsets[22]))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot parse ticket keyType: %s", err)
 	}
 
 	keyValue, err := readKerberosBuffer(l, ptr.WithOffset(reference.Offsets[23]))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot parse ticket keyValue: %s", err)
 	}
 
 	ticketEncType, err := l.ReadUInt32(ptr.WithOffset(reference.Offsets[24]))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot parse ticket ticketEncType: %s", err)
 	}
 
 	ticketKvno, err := l.ReadUInt32(ptr.WithOffset(reference.Offsets[25]))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot parse ticket ticketKvno: %s", err)
 	}
 
 	ticketValue, err := readKerberosBuffer(l, ptr.WithOffset(reference.Offsets[26]))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot parse ticket ticketValue: %s", err)
 	}
 
 	tk := &globals.SavoirKerberosTicket{
@@ -294,7 +294,7 @@ func ParseKerberos(l utils.MemoryReader) ([]*KerberosEntry, error) {
 		for i := 0; i < 3; i++ {
 			tickets, err := ParseKerberosTickets(l, reference, ptr.WithOffset(reference.Offsets[7+i]), i)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("cannot parse Kerberos tickets (%d): %s", i, err)
 			}
 
 			entry.Tickets = append(entry.Tickets, tickets...)
