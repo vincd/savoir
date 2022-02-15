@@ -1,11 +1,5 @@
 package krb5
 
-// https://datatracker.ietf.org/doc/html/rfc4120#section-5.2.2
-type PrincipalName struct {
-	NameType   int32    `asn1:"explicit,tag:0"`
-	NameString []string `asn1:"generalstring,explicit,tag:1"`
-}
-
 // https://datatracker.ietf.org/doc/html/rfc4120#section-5.2.5
 type HostAddress struct {
 	AddrType int32  `asn1:"explicit,tag:0"`

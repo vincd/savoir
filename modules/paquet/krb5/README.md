@@ -4,7 +4,7 @@ Implement parts of the [RFC4120](https://datatracker.ietf.org/doc/html/rfc4120)
 
 | Chapter | File                   |
 |:-------:|:----------------------:|
-| `5.2.2` | `types.go`             |
+| `5.2.2` | `principalname.go`     |
 | `5.2.5` | `types.go`             |
 | `5.2.6` | `authorizationdata.go` |
 | `5.2.7` | `pa.go`                |

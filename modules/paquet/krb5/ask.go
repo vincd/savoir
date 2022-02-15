@@ -44,10 +44,7 @@ func AskTGT(domain string, username string, password string, key []byte, eTypeVa
 		NameType:   KRB_NT_PRINCIPAL,
 		NameString: []string{username},
 	}
-	serverName := PrincipalName{
-		NameType:   KRB_NT_SRV_INST,
-		NameString: []string{"krbtgt", domain},
-	}
+	serverName := NewKrbtgtName(domain)
 	// TODO: KDCOptions depends on how we want to ask the ticket
 	kOptions := NewKDCOptions()
 	// SetKerberosFlag(&kOptions, KDCFlagsProxiable)
@@ -200,8 +197,8 @@ func AskTGT(domain string, username string, password string, key []byte, eTypeVa
 	return tgt, nil
 }
 
-func AskTGS(domain string, serverName PrincipalName, clientRealm string, ClientName PrincipalName, ticket Ticket, key EncryptionKey, dcIp string) (*TGSRep, error) {
-	auth, err := NewAuthenticator(clientRealm, ClientName)
+func AskTGS(domain string, serverName PrincipalName, clientRealm string, clientName PrincipalName, ticket Ticket, key EncryptionKey, dcIp string) (*TGSRep, error) {
+	auth, err := NewAuthenticator(clientRealm, clientName)
 	if err != nil {
 		return nil, err
 	}

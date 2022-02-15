@@ -3,7 +3,6 @@ package kerberos
 import (
 	"encoding/hex"
 	"fmt"
-	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -74,13 +73,8 @@ func init() {
 				tgtCred = tgt.Credentials()
 			}
 
-			principalName := krb5.PrincipalName{
-				NameType:   krb5.KRB_NT_SRV_INST,
-				NameString: strings.Split(service, "/"),
-			}
-
 			fmt.Printf("[*] Asking TGS for principal: %s\n", service)
-			tgs, err := krb5.AskTGSWithKirbi(domain, principalName, tgtCred, dcIp)
+			tgs, err := krb5.AskTGSWithKirbi(domain, krb5.NewServiceName(service), tgtCred, dcIp)
 			if err != nil {
 				return fmt.Errorf("cannot ask TGS for principal %s: %s", service, err)
 			}
