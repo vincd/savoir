@@ -46,7 +46,7 @@ func ParseClearCredentials(l utils.MemoryReader, clearCredentials []byte) (*MSVE
 	if clearCredentials[4] == 0xCC && clearCredentials[5] == 0xCC && clearCredentials[6] == 0xCC && clearCredentials[7] == 0xCC {
 		credentials := &Msv10PrimaryCredentialStrange{}
 		if err := r.ReadStructure(binary.Pointer(0), credentials); err != nil {
-			return nil, fmt.Errorf("Error decoding Msv10PrimaryCredentialStrange struct %s.", err)
+			return nil, fmt.Errorf("error decoding Msv10PrimaryCredentialStrange struct: %s", err)
 		}
 
 		entry := &MSVEntry{
@@ -177,10 +177,15 @@ func GetLogonEntryList(l utils.MemoryReader) ([]LogonEntry, error) {
 	}
 
 	// Check for anti-mimikatz
-	// TODO: add TimeDateStamp check
-	if l.BuildNumber() >= windows.BuildNumberWindows7 && l.BuildNumber() < windows.BuildNumberWindows8 && true {
-		fmt.Printf("[!] We don't check the TimeDateStamp of the dll.")
-		reference = &LogonEntrySignatures[referenceIndex+1]
+	// https://github.com/gentilkiwi/mimikatz/blob/7f02230226b04591f9685e74b6e50f14974b30f6/mimikatz/modules/sekurlsa/kuhl_m_sekurlsa.c#L318
+	if l.BuildNumber() >= windows.BuildNumberWindows7 && l.BuildNumber() < windows.BuildNumberWindows8 {
+		ts, err := l.GetModuleTimestamp("lsasrv.dll")
+		if err != nil {
+			return nil, err
+		}
+		if ts > 0x53480000 {
+			reference = &LogonEntrySignatures[referenceIndex+1]
+		}
 	}
 
 	logonEntryList := make([]LogonEntry, 0)
@@ -195,7 +200,11 @@ func GetLogonEntryList(l utils.MemoryReader) ([]LogonEntry, error) {
 			}
 		}
 
-		currentEntryPtr := firstEntryPtr
+		currentEntryPtr, err := l.ReadPointer(firstEntryPtr)
+		if err != nil {
+			return nil, err
+		}
+
 		for currentEntryPtr > 0 {
 			flink, err := l.ReadPointer(currentEntryPtr.WithOffset(reference.Offsets[2]))
 			if err != nil {
@@ -217,12 +226,15 @@ func GetLogonEntryList(l utils.MemoryReader) ([]LogonEntry, error) {
 			username, err := ntdll.GetLsaUnicodeStringValue(l, currentEntryPtr.WithOffset(reference.Offsets[3]))
 			if err != nil {
 				if unk1 == 0xffffffff {
-					return nil, fmt.Errorf("Error getting username with unk1=%x: %s", unk1, err)
+					return nil, fmt.Errorf("error getting username with unk1=0x%x: %s", unk1, err)
 				}
 			} else {
 				if unk1 != 0xffffffff && len(username) > 0 {
-					utils.DumpMemory(l, currentEntryPtr, uint32(reference.Offsets[3])+0x10)
-					return nil, fmt.Errorf("We can read a username (%s) with unk1=%x.", username, unk1)
+					utils.DumpMemory(l, currentEntryPtr, uint32(reference.Offsets[8])+0x10)
+					if len(username) > 10 {
+						username = username[:10] + "..."
+					}
+					return nil, fmt.Errorf("[DEBUG] we can read a username (%s) with unk1=0x%x", username, unk1)
 				}
 			}
 

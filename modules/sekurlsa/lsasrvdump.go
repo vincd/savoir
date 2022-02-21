@@ -114,7 +114,7 @@ func (e LsaSrvEntry) String() string {
 func NewLsaSrv(r utils.MemoryReader) (*LsaSrv, error) {
 	cryptoKeys, err := crypto.FindCryptoKeys(r)
 	if err != nil {
-		return nil, fmt.Errorf("Error getting Crypto: %s", err)
+		return nil, fmt.Errorf("error getting Crypto: %s", err)
 	}
 
 	lsasrv := &LsaSrv{

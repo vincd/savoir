@@ -63,7 +63,7 @@ func (p Page) search(handle sys_windows.Handle, pattern []byte) (binary.Pointer,
 		}
 	}
 
-	return binary.Pointer(0), fmt.Errorf("Cannot find pattern in module memory.")
+	return binary.Pointer(0), fmt.Errorf("cannot find pattern in module memory")
 }
 
 type ProcessReader struct {
@@ -245,7 +245,7 @@ func (m ProcessReader) GetModuleTimestamp(moduleName string) (uint64, error) {
 	// FileInfo.Sys() returns the System data structure (Win32FileAttributeData on Windows)
 	// We use this structure to recover the `CreationTime`.
 	win32FileAttribute := info.Sys().(*syscall.Win32FileAttributeData)
-	ts := win32FileAttribute.CreationTime.Nanoseconds() / 1000 / 1000 
+	ts := win32FileAttribute.CreationTime.Nanoseconds() / 1000 / 1000
 
 	return uint64(ts), nil
 }

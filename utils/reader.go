@@ -26,6 +26,7 @@ type MemoryReader interface {
 	ReadFromPointer(ptr binary.Pointer, size uint32) ([]byte, error)
 	ReadNextPointer(ptr binary.Pointer) (binary.Pointer, binary.Pointer, error)
 	SearchPatternInModule(moduleName string, pattern []byte) (binary.Pointer, error)
+	GetModuleTimestamp(moduleName string) (uint64, error)
 }
 
 func MemoryReaderUInt16(r SimpleMemoryReader, ptr binary.Pointer) (uint16, error) {
@@ -98,7 +99,7 @@ func DumpMemory(r SimpleMemoryReader, ptr binary.Pointer, size uint32) {
 		fmt.Printf("Error gettting memory from 0x%x (%d): %s", ptr, size, err)
 	}
 
-	fmt.Printf("Memory dump at 0x%x (%d)\n%s\n", ptr, ptr, hex.Dump(buff))
+	fmt.Printf("memory dump at 0x%x (%d)\n%s\n", ptr, ptr, hex.Dump(buff))
 }
 
 type BytesReader struct {
@@ -123,7 +124,7 @@ func (r BytesReader) ProcessorArchitecture() windows.Arch {
 
 func (r BytesReader) Read(ptr binary.Pointer, size uint32) ([]byte, error) {
 	if uint64(len(r.buffer)) < ptr.U64()+uint64(size) {
-		return nil, fmt.Errorf("Buffer is too small to read.")
+		return nil, fmt.Errorf("buffer is too small to read")
 	}
 
 	return r.buffer[ptr : ptr.U64()+uint64(size)], nil
@@ -146,17 +147,21 @@ func (r BytesReader) ReadStructure(ptr binary.Pointer, data interface{}) error {
 }
 
 func (r BytesReader) SearchPatternInModule(moduleName string, pattern []byte) (binary.Pointer, error) {
-	return binary.Pointer(0), fmt.Errorf("Method BytesReader::SearchPatternInModule not implemented.")
+	return binary.Pointer(0), fmt.Errorf("method BytesReader::SearchPatternInModule not implemented")
+}
+
+func (r BytesReader) GetModuleTimestamp(moduleName string) (uint64, error) {
+	return uint64(0), fmt.Errorf("method BytesReader::GetModuleTimestamp not implemented")
 }
 
 func (r BytesReader) ReadFromPointer(ptr binary.Pointer, size uint32) ([]byte, error) {
-	return nil, fmt.Errorf("Method BytesReader::ReadFromPointer not implemented.")
+	return nil, fmt.Errorf("method BytesReader::ReadFromPointer not implemented")
 }
 
 func (r BytesReader) ReadNextPointer(ptr binary.Pointer) (binary.Pointer, binary.Pointer, error) {
-	return binary.Pointer(0), binary.Pointer(0), fmt.Errorf("Method BytesReader::ReadNextPointer not implemented.")
+	return binary.Pointer(0), binary.Pointer(0), fmt.Errorf("method BytesReader::ReadNextPointer not implemented")
 }
 
 func (m BytesReader) ReadPointer(ptr binary.Pointer) (binary.Pointer, error) {
-	return binary.Pointer(0), fmt.Errorf("Method BytesReader::ReadPointer not implemented.")
+	return binary.Pointer(0), fmt.Errorf("method BytesReader::ReadPointer not implemented")
 }

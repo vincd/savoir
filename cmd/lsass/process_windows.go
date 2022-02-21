@@ -4,8 +4,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/vincd/savoir/modules/sekurlsa"
-	"github.com/vincd/savoir/windows/ntdll"
-	"github.com/vincd/savoir/windows/process"
+	"github.com/vincd/savoir/modules/windows"
 )
 
 func init() {
@@ -20,11 +19,11 @@ func init() {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := ntdll.AskPrivilege(ntdll.SE_DEBUG); err != nil {
+			if err := windows.AskPrivilegeSeDebug(); err != nil {
 				return err
 			}
 
-			p, err := process.NewProcessReader("lsass.exe")
+			p, err := windows.NewProcessReader("lsass.exe")
 			if err != nil {
 				return err
 			}

@@ -160,7 +160,7 @@ type KiwiMsv10List61AntiMimikatz struct {
 	Unk13                            binary.Pointer
 	LocallyUniqueIdentifier          uint64
 	SecondaryLocallyUniqueIdentifier uint64
-	waza                             [12]byte
+	Waza                             [12]byte
 	_                                uint32
 	UserName                         ntdll.LsaUnicodeString
 	Domain                           ntdll.LsaUnicodeString

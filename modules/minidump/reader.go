@@ -131,7 +131,7 @@ func (m Minidump) SearchPatternInModule(moduleName string, pattern []byte) (bina
 				searchOffset := currentRva + i
 				t, err := m.reader.Read(binary.Pointer(searchOffset), patternSize)
 				if err != nil {
-					return binary.Pointer(0), fmt.Errorf("Cannot search pattern in the memory.")
+					return binary.Pointer(0), fmt.Errorf("cannot search pattern in the memory")
 				}
 				if bytes.Compare(pattern, t) == 0 {
 					// positions = append(positions, memory64.StartOfMemoryRange + i)
@@ -143,7 +143,7 @@ func (m Minidump) SearchPatternInModule(moduleName string, pattern []byte) (bina
 		currentRva += memory64.DataSize
 	}
 
-	return binary.Pointer(0), fmt.Errorf("Cannot find pattern in Minidump memory.")
+	return binary.Pointer(0), fmt.Errorf("cannot find pattern in Minidump memory")
 }
 
 func (m Minidump) GetModuleTimestamp(moduleName string) (uint64, error) {

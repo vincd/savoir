@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/vincd/savoir/modules/minidump"
 	"github.com/vincd/savoir/modules/sekurlsa"
-	"github.com/vincd/savoir/windows/minidump"
 )
 
 func init() {

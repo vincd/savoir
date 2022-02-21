@@ -24,7 +24,7 @@ var (
 )
 
 var LogonEntrySignatures = []globals.Signature{
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureAMD64,
 		BuildNumberMin:        windows.BuildNumberWindowsXP,
 		BuildNumberMax:        windows.BuildNumberWindows2K3,
@@ -49,7 +49,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10List51Type, "Unk1", true),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureAMD64,
 		BuildNumberMin:        windows.BuildNumberWindows2K3,
 		BuildNumberMax:        windows.BuildNumberWindowsVista,
@@ -74,7 +74,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10List52Type, "Unk1", true),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureAMD64,
 		BuildNumberMin:        windows.BuildNumberWindowsVista,
 		BuildNumberMax:        windows.BuildNumberWindows7,
@@ -99,7 +99,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10List60Type, "Unk1", true),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureAMD64,
 		BuildNumberMin:        windows.BuildNumberWindows7,
 		BuildNumberMax:        windows.BuildNumberWindows8,
@@ -124,7 +124,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10List61Type, "Unk1", true),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureAMD64,
 		BuildNumberMin:        windows.BuildNumberWindows7,
 		BuildNumberMax:        windows.BuildNumberWindows8,
@@ -149,7 +149,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10List61AntiMimikatzType, "Unk1", true),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureAMD64,
 		BuildNumberMin:        windows.BuildNumberWindows8,
 		BuildNumberMax:        windows.BuildNumberWindowsBlue,
@@ -174,7 +174,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10List62Type, "Unk1", true),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureAMD64,
 		BuildNumberMin:        windows.BuildNumberWindows8,
 		BuildNumberMax:        windows.BuildNumberWindowsBlue,
@@ -199,7 +199,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10List63Type, "Unk1", true),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureAMD64,
 		BuildNumberMin:        windows.BuildNumberWindowsBlue,
 		BuildNumberMax:        windows.BuildNumberWindows10_1507,
@@ -224,7 +224,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10List63Type, "Unk1", true),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureAMD64,
 		BuildNumberMin:        windows.BuildNumberWindows10_1507,
 		BuildNumberMax:        windows.BuildNumberWindows10_1511,
@@ -249,7 +249,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10List63Type, "Unk1", true),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureAMD64,
 		BuildNumberMin:        windows.BuildNumberWindows10_1511,
 		BuildNumberMax:        windows.BuildNumberWindows10_1607,
@@ -274,7 +274,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10List63Type, "Unk1", true),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureAMD64,
 		BuildNumberMin:        windows.BuildNumberWindows10_1607,
 		BuildNumberMax:        windows.BuildNumberWindows10_1703,
@@ -301,7 +301,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10PrimaryCredential10_1607, "IsDPAPIProtected", true),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureAMD64,
 		BuildNumberMin:        windows.BuildNumberWindows10_1703,
 		BuildNumberMax:        windows.BuildNumberWindows10_1803,
@@ -328,7 +328,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10PrimaryCredential10_1607, "IsDPAPIProtected", true),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureAMD64,
 		BuildNumberMin:        windows.BuildNumberWindows10_1803,
 		BuildNumberMax:        windows.BuildNumberWindows10_1903,
@@ -355,7 +355,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10PrimaryCredential10_1607, "IsDPAPIProtected", true),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureAMD64,
 		BuildNumberMin:        windows.BuildNumberWindows10_1903,
 		Pattern:               []byte{0x33, 0xff, 0x41, 0x89, 0x37, 0x4c, 0x8b, 0xf3, 0x45, 0x85, 0xc0, 0x74},
@@ -383,7 +383,7 @@ var LogonEntrySignatures = []globals.Signature{
 	},
 
 	// x86
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureX86,
 		BuildNumberMin:        windows.BuildNumberWindowsXP,
 		BuildNumberMax:        windows.BuildNumberWindows2K3,
@@ -408,7 +408,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10List51Type, "Unk1", false),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureX86,
 		BuildNumberMin:        windows.BuildNumberWindows2K3,
 		BuildNumberMax:        windows.BuildNumberWindowsVista,
@@ -433,7 +433,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10List52Type, "Unk1", false),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureX86,
 		BuildNumberMin:        windows.BuildNumberWindowsVista,
 		BuildNumberMax:        windows.BuildNumberWindows7,
@@ -458,7 +458,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10List60Type, "Unk1", false),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureX86,
 		BuildNumberMin:        windows.BuildNumberWindows7,
 		BuildNumberMax:        windows.BuildNumberWindows8,
@@ -483,7 +483,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10List61Type, "Unk1", false),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureX86,
 		BuildNumberMin:        windows.BuildNumberWindows7,
 		BuildNumberMax:        windows.BuildNumberWindows8,
@@ -508,7 +508,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10List61AntiMimikatzType, "Unk1", false),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureX86,
 		BuildNumberMin:        windows.BuildNumberWindows8,
 		BuildNumberMax:        windows.BuildNumberWindowsBlue,
@@ -533,7 +533,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10List62Type, "Unk1", false),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureX86,
 		BuildNumberMin:        windows.BuildNumberWindows8,
 		BuildNumberMax:        windows.BuildNumberWindowsBlue,
@@ -558,7 +558,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10List63Type, "Unk1", false),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureX86,
 		BuildNumberMin:        windows.BuildNumberWindowsBlue,
 		BuildNumberMax:        windows.BuildNumberWindows10_1507,
@@ -583,7 +583,7 @@ var LogonEntrySignatures = []globals.Signature{
 			binary.GetStructureFieldOffset(kiwiMsv10List63Type, "Unk1", false),
 		},
 	},
-	globals.Signature{
+	{
 		ProcessorArchitecture: windows.ProcessorArchitectureX86,
 		BuildNumberMin:        windows.BuildNumberWindows10_1507,
 		Pattern:               []byte{0x8b, 0x4d, 0xe8, 0x8b, 0x45, 0xf4, 0x89, 0x75, 0xec, 0x89, 0x01, 0x85, 0xff, 0x74},

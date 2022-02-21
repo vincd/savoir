@@ -4,7 +4,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/des"
-	"fmt"
 
 	"github.com/vincd/savoir/modules/sekurlsa/packages/globals"
 	"github.com/vincd/savoir/utils"
@@ -83,8 +82,6 @@ func (l *LsaSrvCryptoKeys) Decrypt(cipherBuffer []byte) ([]byte, error) {
 	} else {
 		return l.DecryptAES(cipherBuffer)
 	}
-
-	return nil, fmt.Errorf("Wrong path in decryption code.")
 }
 
 func (l *LsaSrvCryptoKeys) DecryptTripleDES(cipherBuffer []byte) ([]byte, error) {
