@@ -37,6 +37,8 @@ lint:
 
 fmt:
 	@go fmt ./...; \
+	find ./**/*.go -type f -exec chmod 644 {} \;; \
+	find ./ -type d -exec chmod 755 {} \;; \
 	echo "Fmt done."
 
 GOX:
