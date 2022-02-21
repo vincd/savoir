@@ -4,59 +4,58 @@
 package ntdll
 
 import (
-	"reflect"
 	"unsafe"
 )
 
 type SystemInformationClass uint32
 
 const (
-	systemBasicInformation                SystemInformationClass = 0
-	systemProcessorInformation                                   = 1
-	systemPerformanceInformation                                 = 2
-	systemTimeOfDayInformation                                   = 3
-	systemPathInformation                                        = 4
-	systemProcessInformation                                     = 5
-	systemCallCountInformation                                   = 6
-	systemDeviceInformation                                      = 7
-	systemProcessorPerformanceInformation                        = 8
-	systemFlagsInformation                                       = 9
-	systemCallTimeInformation                                    = 10
-	systemModuleInformation                                      = 11
-	systemLocksInformation                                       = 12
-	systemStackTraceInformation                                  = 13
-	systemPagedPoolInformation                                   = 14
-	systemNonPagedPoolInformation                                = 15
-	systemHandleInformation                                      = 16
-	systemObjectInformation                                      = 17
-	systemPageFileInformation                                    = 18
-	systemVdmInstemulInformation                                 = 19
-	systemVdmBopInformation                                      = 20
-	systemFileCacheInformation                                   = 21
-	systemPoolTagInformation                                     = 22
-	systemInterruptInformation                                   = 23
-	systemDpcBehaviorInformation                                 = 24
-	systemFullMemoryInformation                                  = 25
-	systemLoadGdiDriverInformation                               = 26
-	systemUnloadGdiDriverInformation                             = 27
-	systemTimeAdjustmentInformation                              = 28
-	systemSummaryMemoryInformation                               = 29
-	systemNextEventIdInformation                                 = 30
-	systemEventIdsInformation                                    = 31
-	systemCrashDumpInformation                                   = 32
-	systemExceptionInformation                                   = 33
-	systemCrashDumpStateInformation                              = 34
-	systemKernelDebuggerInformation                              = 35
-	systemContextSwitchInformation                               = 36
-	systemRegistryQuotaInformation                               = 37
-	systemExtendServiceTableInformation                          = 38
-	systemPrioritySeperation                                     = 39
-	systemPlugPlayBusInformation                                 = 40
-	systemDockInformation                                        = 41
-	systemPowerInformation                                       = 42
-	systemProcessorSpeedInformation                              = 43
-	systemCurrentTimeZoneInformation                             = 44
-	systemLookasideInformation                                   = 45
+	SystemInformationBasicInformation                SystemInformationClass = 0
+	SystemInformationProcessorInformation                                   = 1
+	SystemInformationPerformanceInformation                                 = 2
+	SystemInformationTimeOfDayInformation                                   = 3
+	SystemInformationPathInformation                                        = 4
+	SystemInformationProcessInformation                                     = 5
+	SystemInformationCallCountInformation                                   = 6
+	SystemInformationDeviceInformation                                      = 7
+	SystemInformationProcessorPerformanceInformation                        = 8
+	SystemInformationFlagsInformation                                       = 9
+	SystemInformationCallTimeInformation                                    = 10
+	SystemInformationModuleInformation                                      = 11
+	SystemInformationLocksInformation                                       = 12
+	SystemInformationStackTraceInformation                                  = 13
+	SystemInformationPagedPoolInformation                                   = 14
+	SystemInformationNonPagedPoolInformation                                = 15
+	SystemInformationHandleInformation                                      = 16
+	SystemInformationObjectInformation                                      = 17
+	SystemInformationPageFileInformation                                    = 18
+	SystemInformationVdmInstemulInformation                                 = 19
+	SystemInformationVdmBopInformation                                      = 20
+	SystemInformationFileCacheInformation                                   = 21
+	SystemInformationPoolTagInformation                                     = 22
+	SystemInformationInterruptInformation                                   = 23
+	SystemInformationDpcBehaviorInformation                                 = 24
+	SystemInformationFullMemoryInformation                                  = 25
+	SystemInformationLoadGdiDriverInformation                               = 26
+	SystemInformationUnloadGdiDriverInformation                             = 27
+	SystemInformationTimeAdjustmentInformation                              = 28
+	SystemInformationSummaryMemoryInformation                               = 29
+	SystemInformationNextEventIdInformation                                 = 30
+	SystemInformationEventIdsInformation                                    = 31
+	SystemInformationCrashDumpInformation                                   = 32
+	SystemInformationExceptionInformation                                   = 33
+	SystemInformationCrashDumpStateInformation                              = 34
+	SystemInformationKernelDebuggerInformation                              = 35
+	SystemInformationContextSwitchInformation                               = 36
+	SystemInformationRegistryQuotaInformation                               = 37
+	SystemInformationExtendServiceTableInformation                          = 38
+	SystemInformationPrioritySeperation                                     = 39
+	SystemInformationPlugPlayBusInformation                                 = 40
+	SystemInformationDockInformation                                        = 41
+	SystemInformationPowerInformation                                       = 42
+	SystemInformationProcessorSpeedInformation                              = 43
+	SystemInformationCurrentTimeZoneInformation                             = 44
+	SystemInformationLookasideInformation                                   = 45
 )
 
 var (
@@ -73,6 +72,7 @@ func NtQuerySystemInformation(SystemInformationClass SystemInformationClass, Sys
 	return NtStatus(r0)
 }
 
+/*// Helper function to call NtQuerySystemInformation
 func QuerySystemInformation(systemInformationClass SystemInformationClass) ([]byte, NtStatus) {
 	var returnLength uint32
 	buf := make([]byte, 0x100)
@@ -92,7 +92,7 @@ func QuerySystemInformation(systemInformationClass SystemInformationClass) ([]by
 	}
 
 	return buf[0:returnLength], STATUS_SUCCESS
-}
+}*/
 
 type kPriority int32
 
@@ -147,7 +147,7 @@ type SystemHandleInformation struct {
 	Handles      []SystemHandle
 }
 
-func QuerySystemProcessInformation() ([]SystemProcessInformation, error) {
+/*func QuerySystemProcessInformation() ([]SystemProcessInformation, error) {
 	buf, status := QuerySystemInformation(systemProcessInformation)
 	if !status.IsSuccess() {
 		return nil, status.Error()
@@ -183,3 +183,4 @@ func QuerySystemHandleInformation() (*SystemHandleInformation, error) {
 
 	return sysinfo, nil
 }
+*/

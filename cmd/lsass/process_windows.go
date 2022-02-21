@@ -12,7 +12,7 @@ func init() {
 	var isJson bool
 	var dumpKerberosTicket bool
 
-	var miniCmd = &cobra.Command{
+	var processCmd = &cobra.Command{
 		Use:   "process",
 		Short: "Use a lsass process memory as input (Windows Only)",
 		Long:  `Use a lsass process memory as input (Windows Only)`,
@@ -46,8 +46,8 @@ func init() {
 		},
 	}
 
-	miniCmd.Flags().BoolVarP(&isJson, "json", "j", false, "Print output as a JSON object")
-	miniCmd.Flags().BoolVarP(&dumpKerberosTicket, "dump-tickets", "d", false, "Dump Kerberos Tickets to kirbi files")
+	processCmd.Flags().BoolVarP(&isJson, "json", "j", false, "Print output as a JSON object")
+	processCmd.Flags().BoolVarP(&dumpKerberosTicket, "dump-tickets", "d", false, "Dump Kerberos Tickets to kirbi files")
 
-	Command.AddCommand(miniCmd)
+	Command.AddCommand(processCmd)
 }

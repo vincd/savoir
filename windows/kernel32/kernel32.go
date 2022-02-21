@@ -15,7 +15,6 @@ var (
 )
 
 var (
-	procReadProcessMemory   = modkernel32.NewProc("ReadProcessMemory")
 	procGetModuleFileNameEx = modkernel32.NewProc("K32GetModuleFileNameExW")
 	procGetSystemInfo       = modkernel32.NewProc("GetSystemInfo")
 	procVirtualQueryEx      = modkernel32.NewProc("VirtualQueryEx")
@@ -62,27 +61,6 @@ func VirtualQueryEx(process windows.Handle, address uintptr) (*MemoryBasicInfo, 
 	}
 
 	return &buffer, nil
-}
-
-func ReadProcessMemory(handle windows.Handle, address uintptr, size uint64) ([]byte, error) {
-	nbr := uintptr(0)
-	data := make([]byte, size)
-
-	r0, _, e1 := procReadProcessMemory.Call(
-		uintptr(handle),
-		uintptr(address),
-		uintptr(unsafe.Pointer(&data[0])),
-		uintptr(size),
-		uintptr(unsafe.Pointer(&nbr)))
-
-	if r0 == 0 {
-		if e1 != nil {
-			return nil, e1
-		}
-		return nil, syscall.EINVAL
-	}
-
-	return data, nil
 }
 
 func GetSystemInfo() SystemInfo {

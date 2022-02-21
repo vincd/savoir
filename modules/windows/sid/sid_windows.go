@@ -1,7 +1,8 @@
-package winnt
+package sid
 
 import (
 	"fmt"
+
 	"golang.org/x/sys/windows"
 )
 
