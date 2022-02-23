@@ -97,6 +97,20 @@ type GenericMapping struct {
 	GenericAll     AccessMask
 }
 
+type ObjectBasicInformationT struct {
+	Attributes               uint32
+	GrantedAccess            AccessMask
+	HandleCount              uint32
+	PointerCount             uint32
+	PagedPoolUsage           uint32
+	NonPagedPoolUsage        uint32
+	Reserved                 [3]uint32
+	NameInformationLength    uint32
+	TypeInformationLength    uint32
+	SecurityDescriptorLength uint32
+	CreateTime               int64
+}
+
 type ObjectTypeInformationT struct {
 	TypeName                   UnicodeString
 	TotalNumberOfObjects       uint32
@@ -235,29 +249,6 @@ func NtQueryObject(
 		uintptr(ObjectInformationLength),
 		uintptr(unsafe.Pointer(ReturnLength)))
 	return NtStatus(r0)
-}
-
-func QueryObject(handle Handle, objectInformationClass ObjectInformationClass) (*ObjectTypeInformationT, NtStatus) {
-	var returnLength uint32
-	buf := make([]byte, 0x100)
-
-	status := NtQueryObject(handle, objectInformationClass, &buf[0], uint32(len(buf)), &returnLength)
-	for !status.IsSuccess() {
-		buf = make([]byte, returnLength)
-		status = NtQueryObject(handle, objectInformationClass, &buf[0], uint32(len(buf)), &returnLength)
-
-		if status.IsSuccess() {
-			break
-		} else if status == STATUS_INFO_LENGTH_MISMATCH {
-			continue
-		} else if status.IsError() {
-			return nil, status
-		}
-	}
-
-	objInfo := (*ObjectTypeInformationT)(unsafe.Pointer(&buf[0]))
-
-	return objInfo, STATUS_SUCCESS
 }
 
 func NtDuplicateObject(

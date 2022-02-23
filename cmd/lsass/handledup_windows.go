@@ -7,6 +7,7 @@ import (
 
 	"github.com/vincd/savoir/modules/sekurlsa"
 	"github.com/vincd/savoir/modules/windows"
+	"github.com/vincd/savoir/modules/windows/process"
 )
 
 func init() {
@@ -27,7 +28,7 @@ func init() {
 			}
 
 			for _, handle := range handles {
-				p, err := windows.NewProcessReaderWithHandle("lsass.exe", 0, handle)
+				p, err := process.NewProcessReaderWithHandle("lsass.exe", 0, handle)
 				if err != nil {
 					fmt.Printf("Cannot create new reader: %s\n", err)
 					continue

@@ -1,7 +1,7 @@
 //go:build windows
 // +build windows
 
-package windows
+package process
 
 import (
 	"bytes"
@@ -18,7 +18,6 @@ import (
 	"github.com/vincd/savoir/utils/binary"
 	swindows "github.com/vincd/savoir/windows"
 	"github.com/vincd/savoir/windows/kernel32"
-	"github.com/vincd/savoir/windows/psapi"
 )
 
 type Module struct {
@@ -41,17 +40,8 @@ func (p Page) String() string {
 	return fmt.Sprintf("Page from 0x%x to 0x%x (0x%x) with protection: 0x%x", p.baseAddress, p.baseAddress.WithOffset(int64(p.size)), p.size, p.allocationProtect)
 }
 
-func (p Page) read(handle sys_windows.Handle) ([]byte, error) {
-	data, err := kernel32.ReadProcessMemory(handle, p.baseAddress.ToUIntPtr(), uint64(p.size))
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
-}
-
-func (p Page) search(handle sys_windows.Handle, pattern []byte) (binary.Pointer, error) {
-	data, err := p.read(handle)
+func (p Page) search(proc *Process, pattern []byte) (binary.Pointer, error) {
+	data, err := proc.Read(p.baseAddress.ToUIntPtr(), uint64(p.size))
 	if err != nil {
 		return binary.Pointer(0), err
 	}
@@ -67,52 +57,36 @@ func (p Page) search(handle sys_windows.Handle, pattern []byte) (binary.Pointer,
 }
 
 type ProcessReader struct {
-	ProcessName  string
-	ProcessId    uint32
+	process      *Process
 	MajorVersion uint32
 	MinorVersion uint32
 	buildNumber  swindows.BuildNumber
 	arch         swindows.Arch
-	handle       sys_windows.Handle
 	Modules      []Module
 	Pages        []Page
 }
 
-func NewProcessReaderWithHandle(name string, pId uint32, handle sys_windows.Handle) (*ProcessReader, error) {
+func newProcessReaderWithProcess(process *Process) (*ProcessReader, error) {
 	// Get Windows numbers to parse the process
 	majorVersion, minorVersion, buildNumber := sys_windows.RtlGetNtVersionNumbers()
 	si := kernel32.GetSystemInfo()
 
 	p := &ProcessReader{
-		ProcessName:  name,
-		ProcessId:    pId,
+		process:      process,
 		MajorVersion: majorVersion,
 		MinorVersion: minorVersion,
 		buildNumber:  swindows.BuildNumber(buildNumber),
 		arch:         swindows.Arch(si.ProcessorArchitecture),
-		handle:       handle,
 		Modules:      make([]Module, 0),
 		Pages:        make([]Page, 0),
 	}
 
-	modules, err := EnumProcessModules(p.handle)
+	moduleInfos, err := p.process.Modules()
 	if err != nil {
 		return nil, err
 	}
 
-	for _, moduleHandle := range modules {
-		moduleFilename, err := kernel32.GetModuleFilenameEx(p.handle, moduleHandle)
-		if err != nil {
-			fmt.Printf("Error on getting filename on handle: %x: %s\n", moduleHandle, err)
-			continue
-		}
-
-		var mi psapi.ModuleInfo
-		if err := psapi.GetModuleInformation(p.handle, moduleHandle, &mi); err != nil {
-			fmt.Printf("Error on getting info of handle: %x: %s\n", moduleHandle, err)
-			continue
-		}
-
+	for moduleFilename, mi := range moduleInfos {
 		p.Modules = append(p.Modules, Module{
 			path:        moduleFilename,
 			baseAddress: binary.Pointer(mi.BaseOfDll),
@@ -122,9 +96,9 @@ func NewProcessReaderWithHandle(name string, pId uint32, handle sys_windows.Hand
 
 	currentAddress := si.MinimumApplicationAddress
 	for currentAddress < si.MaximumApplicationAddress {
-		pageInfo, err := kernel32.VirtualQueryEx(p.handle, currentAddress)
+		pageInfo, err := kernel32.VirtualQueryEx(p.process.Handle(), currentAddress)
 		if err != nil {
-			fmt.Printf("Error on getting query on : %x: %s\n", currentAddress, err)
+			fmt.Printf("cannot query page at 0x%x: %s\n", currentAddress, err)
 			continue
 		}
 
@@ -139,42 +113,40 @@ func NewProcessReaderWithHandle(name string, pId uint32, handle sys_windows.Hand
 	return p, nil
 }
 
+func NewProcessReaderWithHandle(name string, pId uint32, handle sys_windows.Handle) (*ProcessReader, error) {
+	p, err := NewProcessWithHandle(handle)
+	if err != nil {
+		return nil, err
+	}
+
+	return newProcessReaderWithProcess(p)
+}
+
 func NewProcessReader(processName string) (*ProcessReader, error) {
-	// Get process ID and open it
-	entry, err := FindProcessWithName(processName)
+	p, err := NewProcessWithName(processName, sys_windows.PROCESS_VM_READ|sys_windows.PROCESS_QUERY_LIMITED_INFORMATION)
 	if err != nil {
 		return nil, err
 	}
 
-	handle, err := sys_windows.OpenProcess(sys_windows.PROCESS_VM_READ|sys_windows.PROCESS_QUERY_LIMITED_INFORMATION, false, entry.ProcessID)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewProcessReaderWithHandle(processName, entry.ProcessID, handle)
+	return newProcessReaderWithProcess(p)
 }
 
 func (p ProcessReader) String() string {
-	return fmt.Sprintf("%s (%d)", p.ProcessName, p.ProcessId)
+	return fmt.Sprintf("ProcessReader: %s", p.process.String())
 }
 
-func (p ProcessReader) Close() error {
-	return sys_windows.CloseHandle(p.handle)
+func (p ProcessReader) Close() {
+	p.process.Close()
 }
 
 func (p ProcessReader) Read(ptr binary.Pointer, size uint32) ([]byte, error) {
 	for _, page := range p.Pages {
 		if page.baseAddress <= ptr && ptr < page.baseAddress.WithOffset(int64(page.size)) {
-			data, err := page.read(p.handle)
-			if err != nil {
-				return nil, err
-			}
-
-			return data[ptr.WithOffset(-int64(page.baseAddress)):][:size], nil
+			return p.process.Read(ptr.ToUIntPtr(), uint64(size))
 		}
 	}
 
-	return nil, fmt.Errorf("Cannot find address 0x%x in current process pages.", ptr)
+	return nil, fmt.Errorf("cannot find address 0x%x in current process pages", ptr)
 }
 
 func (p ProcessReader) ProcessorArchitecture() swindows.Arch {
@@ -208,7 +180,7 @@ func (p ProcessReader) findModuleByName(targetModuleName string) (*Module, error
 		}
 	}
 
-	return nil, fmt.Errorf("Cannot find module with name %s.", targetModuleName)
+	return nil, fmt.Errorf("cannot find module with name %s", targetModuleName)
 }
 
 func (p ProcessReader) SearchPatternInModule(moduleName string, pattern []byte) (binary.Pointer, error) {
@@ -219,14 +191,14 @@ func (p ProcessReader) SearchPatternInModule(moduleName string, pattern []byte) 
 
 	for _, page := range p.Pages {
 		if module.baseAddress <= page.baseAddress && page.baseAddress < module.baseAddress.WithOffset(int64(module.size)) {
-			ptr, err := page.search(p.handle, pattern)
+			ptr, err := page.search(p.process, pattern)
 			if err == nil {
 				return ptr, nil
 			}
 		}
 	}
 
-	return binary.Pointer(0), fmt.Errorf("Cannot find pattern in module memory: %x.", pattern)
+	return binary.Pointer(0), fmt.Errorf("cannot find pattern in module memory: %x", pattern)
 }
 
 // Get Module creation time in milliseconds
@@ -263,7 +235,7 @@ func (p ProcessReader) getPointer(ptr binary.Pointer) (binary.Pointer, error) {
 	} else if p.ProcessorArchitecture().Isx86() {
 		return binary.Pointer(uint64(offset)), nil
 	} else {
-		return binary.Pointer(0), fmt.Errorf("ProcessReader::getPointer is not support for ProcessorArchitecture %d.", p.ProcessorArchitecture())
+		return binary.Pointer(0), fmt.Errorf("cannot get pointer for processor architecture %d", p.ProcessorArchitecture())
 	}
 }
 

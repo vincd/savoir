@@ -34,13 +34,12 @@ func tokenElevate(commandLine string) error {
 	currentProcessId := sys_windows.GetCurrentProcessId()
 
 	for _, processInfo := range infos {
-		ptid := uint32(processInfo.UniqueProcessID)
-
-		if ptid == 0 || currentProcessId == ptid {
+		pid := uint32(processInfo.UniqueProcessID)
+		if pid == 0 || currentProcessId == pid {
 			continue
 		}
 
-		p, err := process.NewProcessWithPid(ptid)
+		p, err := process.NewProcessWithPid(pid, sys_windows.PROCESS_QUERY_INFORMATION)
 		if err != nil {
 			continue
 		}

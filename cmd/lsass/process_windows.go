@@ -5,6 +5,7 @@ import (
 
 	"github.com/vincd/savoir/modules/sekurlsa"
 	"github.com/vincd/savoir/modules/windows"
+	"github.com/vincd/savoir/modules/windows/process"
 )
 
 func init() {
@@ -23,7 +24,7 @@ func init() {
 				return err
 			}
 
-			p, err := windows.NewProcessReader("lsass.exe")
+			p, err := process.NewProcessReader("lsass.exe")
 			if err != nil {
 				return err
 			}

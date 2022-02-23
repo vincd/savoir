@@ -72,28 +72,6 @@ func NtQuerySystemInformation(SystemInformationClass SystemInformationClass, Sys
 	return NtStatus(r0)
 }
 
-/*// Helper function to call NtQuerySystemInformation
-func QuerySystemInformation(systemInformationClass SystemInformationClass) ([]byte, NtStatus) {
-	var returnLength uint32
-	buf := make([]byte, 0x100)
-
-	status := NtQuerySystemInformation(systemInformationClass, &buf[0], uint32(len(buf)), &returnLength)
-	for !status.IsSuccess() {
-		buf = make([]byte, returnLength)
-		status = NtQuerySystemInformation(systemInformationClass, &buf[0], uint32(len(buf)), &returnLength)
-
-		if status.IsSuccess() {
-			break
-		} else if status == STATUS_INFO_LENGTH_MISMATCH {
-			continue
-		} else if status.IsError() {
-			return nil, status
-		}
-	}
-
-	return buf[0:returnLength], STATUS_SUCCESS
-}*/
-
 type kPriority int32
 
 type SystemProcessInformation struct {
@@ -146,41 +124,3 @@ type SystemHandleInformation struct {
 	HandlesCount uint64
 	Handles      []SystemHandle
 }
-
-/*func QuerySystemProcessInformation() ([]SystemProcessInformation, error) {
-	buf, status := QuerySystemInformation(systemProcessInformation)
-	if !status.IsSuccess() {
-		return nil, status.Error()
-	}
-
-	processInfos := make([]SystemProcessInformation, 0)
-	currentOffset := uint32(0)
-
-	processInfo := (*SystemProcessInformation)(unsafe.Pointer(&buf[currentOffset]))
-	processInfos = append(processInfos, *processInfo)
-
-	for processInfo.NextEntryOffset > 0 {
-		currentOffset += processInfo.NextEntryOffset
-		processInfo = (*SystemProcessInformation)(unsafe.Pointer(&buf[currentOffset]))
-		processInfos = append(processInfos, *processInfo)
-	}
-
-	return processInfos, nil
-}
-
-func QuerySystemHandleInformation() (*SystemHandleInformation, error) {
-	// TODO: check x64 or x86
-	buf, status := QuerySystemInformation(systemHandleInformation)
-	if !status.IsSuccess() {
-		return nil, status.Error()
-	}
-
-	sysinfo := (*SystemHandleInformation)(unsafe.Pointer(&buf[0]))
-	handles := make([]SystemHandle, int(sysinfo.HandlesCount))
-	hdr := (*reflect.SliceHeader)(unsafe.Pointer(&handles))
-	hdr.Data = uintptr(unsafe.Pointer(&buf[8]))
-	sysinfo.Handles = handles
-
-	return sysinfo, nil
-}
-*/
