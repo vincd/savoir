@@ -34,14 +34,32 @@ type Page struct {
 	baseAddress       binary.Pointer
 	size              uint32
 	allocationProtect uint32
+	data              []byte
 }
 
 func (p Page) String() string {
 	return fmt.Sprintf("Page from 0x%x to 0x%x (0x%x) with protection: 0x%x", p.baseAddress, p.baseAddress.WithOffset(int64(p.size)), p.size, p.allocationProtect)
 }
 
-func (p Page) search(proc *Process, pattern []byte) (binary.Pointer, error) {
+func (p Page) read(proc *Process) ([]byte, error) {
+	// check if we've already read the page
+	if uint32(len(p.data)) == p.size {
+		return p.data, nil
+	}
+
+	// first time we read this page, then ask the process to read it and save it
 	data, err := proc.Read(p.baseAddress.ToUIntPtr(), uint64(p.size))
+	if err != nil {
+		return nil, fmt.Errorf("cannot read page at 0x%x: %s", p.baseAddress.ToUIntPtr(), err)
+	}
+
+	p.data = data
+
+	return data, nil
+}
+
+func (p Page) search(proc *Process, pattern []byte) (binary.Pointer, error) {
+	data, err := p.read(proc)
 	if err != nil {
 		return binary.Pointer(0), err
 	}
@@ -142,7 +160,7 @@ func (p ProcessReader) Close() {
 func (p ProcessReader) Read(ptr binary.Pointer, size uint32) ([]byte, error) {
 	for _, page := range p.Pages {
 		if page.baseAddress <= ptr && ptr < page.baseAddress.WithOffset(int64(page.size)) {
-			return p.process.Read(ptr.ToUIntPtr(), uint64(size))
+			return page.read(p.process)
 		}
 	}
 

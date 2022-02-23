@@ -30,13 +30,16 @@ func QueryObject(handle sys_windows.Handle, objectInformationClass ntdll.ObjectI
 }
 
 func QueryObjectBasicInformation(handle sys_windows.Handle) (*ntdll.ObjectBasicInformationT, ntdll.NtStatus) {
-	buf, status := QueryObject(handle, ntdll.ObjectBasicInformation)
-	if status != ntdll.STATUS_SUCCESS {
-		return nil, status
-	}
+	result := ntdll.ObjectBasicInformationT{}
+	returnLength := uint32(0)
 
-	objInfo := (*ntdll.ObjectBasicInformationT)(unsafe.Pointer(&buf[0]))
-	return objInfo, ntdll.STATUS_SUCCESS
+	status := ntdll.NtQueryObject(
+		ntdll.Handle(handle), ntdll.ObjectBasicInformation,
+		(*byte)(unsafe.Pointer(&result)), uint32(unsafe.Sizeof(result)),
+		&returnLength,
+	)
+
+	return &result, status
 }
 
 func QueryObjectTypeInformation(handle sys_windows.Handle) (*ntdll.ObjectTypeInformationT, ntdll.NtStatus) {

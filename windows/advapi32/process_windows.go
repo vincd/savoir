@@ -29,7 +29,7 @@ func CreateProcessWithLogonW(username *uint16, domain *uint16, password *uint16,
 		uintptr(unsafe.Pointer(startupInfo)),
 		uintptr(unsafe.Pointer(processInformation)))
 
-	if r0 != 0 {
+	if r0 == 0 {
 		return err
 	}
 
