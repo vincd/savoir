@@ -16,6 +16,7 @@ build/
 *.kirbi
 *.ccache
 *.DMP
+*.DMP.json
 *.hashes
 *.hive
 

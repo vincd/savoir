@@ -35,6 +35,10 @@ lint:
 	go mod tidy ; \
 	echo "Lint Done."
 
+test:
+	@go test -v github.com/vincd/savoir/modules/sekurlsa; \
+	echo "Test done."
+
 fmt:
 	@go fmt ./...; \
 	find ./**/*.go -type f -exec chmod 644 {} \;; \
