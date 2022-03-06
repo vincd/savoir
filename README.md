@@ -141,6 +141,17 @@ This command take a screenshot of a URL using a headless browser.
 savoir webscreenshot --url {url} --renderer {chrome|chromium|firefox} --renderer-path {path}
 ```
 
+## Scanner
+
+### TCP Scanner
+
+This is a TCP connect scanner using Go `net.Dialer` to test if there is 
+opned services.
+
+```bash
+savoir scanner tcp --host scanme.nmap.org --json
+```
+
 
 ## Credits
 
