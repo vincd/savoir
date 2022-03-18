@@ -11,6 +11,7 @@ import (
 	"github.com/vincd/savoir/cmd/lsass"
 	"github.com/vincd/savoir/cmd/sam"
 	"github.com/vincd/savoir/cmd/scanner"
+	"github.com/vincd/savoir/cmd/socks"
 	"github.com/vincd/savoir/cmd/token"
 	"github.com/vincd/savoir/cmd/webscreenshot"
 	"github.com/vincd/savoir/utils"
@@ -56,6 +57,7 @@ func addSubCommands() {
 	rootCmd.AddCommand(ldap.Command)
 	rootCmd.AddCommand(sam.Command)
 	rootCmd.AddCommand(scanner.Command)
+	rootCmd.AddCommand(socks.Command)
 	rootCmd.AddCommand(lsass.Command)
 	rootCmd.AddCommand(token.Command)
 	rootCmd.AddCommand(webscreenshot.Command)
