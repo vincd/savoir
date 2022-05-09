@@ -1,0 +1,26 @@
+name: Build and publish Savoir
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build Savoir
+        run: |
+          apt-get update && \
+          apt-get install -y build-essential && \
+          make build
+
+      - uses: svenstaro/upload-release-action@v2
+        name: Publish Savoir latest version 
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: build/savoir-*
+          tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true
