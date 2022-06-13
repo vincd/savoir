@@ -55,6 +55,18 @@ func (k *KRBCred) String() string {
 	return k.DisplayTicket(false, false, nil)
 }
 
+func (k *KRBCred) UserName() string {
+	return strings.Join(k.DecryptedEncPart.TicketInfo[0].PName.NameString, "@")
+}
+
+func (k *KRBCred) UserRealm() string {
+	return k.DecryptedEncPart.TicketInfo[0].PRealm
+}
+
+func (k *KRBCred) EType() int32 {
+	return k.DecryptedEncPart.TicketInfo[0].Key.KeyType
+}
+
 // Return a Rubeus style output: `LSA.DisplayTicket`
 //  * displayB64ticket: display the ticket encoded as base64
 //  * nowrap: don't wrap the base64 ticket output
@@ -65,18 +77,17 @@ func (k *KRBCred) DisplayTicket(displayB64ticket bool, nowrap bool, serviceKey [
 	}
 
 	sname := strings.Join(k.Tickets[0].SName.NameString, "/")
-	keyType := k.DecryptedEncPart.TicketInfo[0].Key.KeyType
 
 	s := ""
 	s += fmt.Sprintf("ServiceName              :  %s\n", sname)
 	s += fmt.Sprintf("ServiceRealm             :  %s\n", k.DecryptedEncPart.TicketInfo[0].SRealm)
-	s += fmt.Sprintf("UserName                 :  %s\n", strings.Join(k.DecryptedEncPart.TicketInfo[0].PName.NameString, "@"))
-	s += fmt.Sprintf("UserRealm                :  %s\n", k.DecryptedEncPart.TicketInfo[0].PRealm)
+	s += fmt.Sprintf("UserName                 :  %s\n", k.UserName())
+	s += fmt.Sprintf("UserRealm                :  %s\n", k.UserRealm())
 	s += fmt.Sprintf("StartTime                :  %s\n", k.DecryptedEncPart.TicketInfo[0].StartTime)
 	s += fmt.Sprintf("EndTime                  :  %s\n", k.DecryptedEncPart.TicketInfo[0].EndTime)
 	s += fmt.Sprintf("RenewTill                :  %s\n", k.DecryptedEncPart.TicketInfo[0].RenewTill)
 	s += fmt.Sprintf("Flags                    :  %s\n", strings.Join(ParseTicketFlags(k.DecryptedEncPart.TicketInfo[0].Flags), " ; "))
-	s += fmt.Sprintf("KeyType                  :  %s\n", crypto.ETypeToString(keyType))
+	s += fmt.Sprintf("KeyType                  :  %s\n", crypto.ETypeToString(k.EType()))
 	s += fmt.Sprintf("Base64(key)              :  %s\n", base64.StdEncoding.EncodeToString(k.DecryptedEncPart.TicketInfo[0].Key.KeyValue))
 
 	// TODO: asrepKey

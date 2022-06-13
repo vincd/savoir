@@ -4,8 +4,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"net"
-	"time"
+
+	"golang.org/x/net/proxy"
 )
 
 type KerberosMessage interface {
@@ -13,13 +13,13 @@ type KerberosMessage interface {
 	Unmarshal([]byte) error
 }
 
-func SendMessage(dcIp string, msg KerberosMessage) ([]byte, error) {
+func SendMessage(dialer proxy.Dialer, dcIp string, msg KerberosMessage) ([]byte, error) {
 	req, err := msg.Marshal()
 	if err != nil {
 		return nil, fmt.Errorf("cannot marshal Kerberos message: %s", err)
 	}
 
-	con, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", dcIp, KERB_KDC_PORT), 5*time.Second)
+	con, err := dialer.Dial("tcp", fmt.Sprintf("%s:%d", dcIp, KERB_KDC_PORT))
 	if err != nil {
 		return nil, fmt.Errorf("cannot contact KDC with IP %s: %s", dcIp, err)
 	}

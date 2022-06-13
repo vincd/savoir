@@ -21,6 +21,7 @@ func init() {
 	var outputFile string
 	var serviceKey string
 	var serviceKeyBytes []byte
+	var socks string
 
 	var askTgsCmd = &cobra.Command{
 		Use:   "asktgs",
@@ -48,6 +49,11 @@ func init() {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			dialer, err := getKdcDialer(socks)
+			if err != nil {
+				return fmt.Errorf("Cannot create SOCKS client: %s", err)
+			}
+
 			var tgtCred *krb5.KRBCred
 
 			if len(ticket) > 0 {
@@ -65,7 +71,7 @@ func init() {
 				}
 
 				fmt.Printf("[*] Use username and password/key as credentials\n")
-				tgt, err := krb5.AskTGT(domain, username, password, keyBytes, getETypeFromFlagValue(enctype), dcIp, false, false)
+				tgt, err := krb5.AskTGT(dialer, domain, username, password, keyBytes, getETypeFromFlagValue(enctype), dcIp, false, false)
 				if err != nil {
 					return fmt.Errorf("cannot ask TGT: %s", err)
 				}
@@ -74,7 +80,7 @@ func init() {
 			}
 
 			fmt.Printf("[*] Asking TGS for principal: %s\n", service)
-			tgs, err := krb5.AskTGSWithKirbi(domain, krb5.NewServiceName(service), tgtCred, dcIp)
+			tgs, err := krb5.AskTGSWithKirbi(dialer, domain, krb5.NewServiceName(service), tgtCred, dcIp)
 			if err != nil {
 				return fmt.Errorf("cannot ask TGS for principal %s: %s", service, err)
 			}
@@ -94,8 +100,8 @@ func init() {
 		},
 	}
 
-	commandAddKerberosDomainFlags(askTgsCmd, &domain, &dcIp)
-	commandAddDomainUserFlagsWithTicket(askTgsCmd, &username, &password, &key, &ticket)
+	commandAddKerberosDomainFlags(askTgsCmd, &dcIp, &socks)
+	commandAddDomainUserFlagsWithTicket(askTgsCmd, &domain, &username, &password, &key, &ticket)
 	commandAddKerberosETypeFlag(askTgsCmd, &enctype)
 	askTgsCmd.Flags().StringVarP(&service, "service", "s", "", "Ask a TGS for this SPN")
 	cobra.MarkFlagRequired(askTgsCmd.Flags(), "service")

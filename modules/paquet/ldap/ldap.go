@@ -1,6 +1,7 @@
 package ldap
 
 import (
+	"crypto/tls"
 	"fmt"
 	"strings"
 
@@ -20,13 +21,21 @@ func NewLDAPClient() (*LDAPClient, error) {
 	return l, nil
 }
 
-func (l *LDAPClient) Connect(host string, port int) error {
-	con, err := ldapv3.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
-	if err != nil {
-		return err
+func (l *LDAPClient) Connect(host string, port int, secure bool) error {
+	if secure {
+		tls := &tls.Config{InsecureSkipVerify: true}
+		con, err := ldapv3.DialTLS("tcp", fmt.Sprintf("%s:%d", host, port), tls)
+		if err != nil {
+			return err
+		}
+		l.l = con
+	} else {
+		con, err := ldapv3.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
+		if err != nil {
+			return err
+		}
+		l.l = con
 	}
-
-	l.l = con
 
 	return nil
 }

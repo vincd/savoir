@@ -3,6 +3,8 @@ package krb5
 import (
 	"fmt"
 
+	"golang.org/x/net/proxy"
+
 	"github.com/vincd/savoir/modules/paquet/krb5/crypto"
 	"github.com/vincd/savoir/utils/asn1"
 )
@@ -30,7 +32,7 @@ func ensureResponseTag(res []byte, expectedTag byte) error {
 // AskTGT:
 //  * noPreauth: return TGT (with undecrypted tickets) if true
 //  * noPac: as no-pac to the KDC (not tested)
-func AskTGT(domain string, username string, password string, key []byte, eTypeValue int32, dcIp string, noPreauth bool, noPac bool) (*ASRep, error) {
+func AskTGT(dialer proxy.Dialer, domain string, username string, password string, key []byte, eTypeValue int32, dcIp string, noPreauth bool, noPac bool) (*ASRep, error) {
 	if len(domain) == 0 {
 		return nil, fmt.Errorf("domain name cannot be empty")
 	}
@@ -63,7 +65,7 @@ func AskTGT(domain string, username string, password string, key []byte, eTypeVa
 
 	if len(key) == 0 {
 		// Send request to KDC
-		res, err := SendMessage(dcIp, req)
+		res, err := SendMessage(dialer, dcIp, req)
 		if err != nil {
 			return nil, err
 		}
@@ -175,7 +177,7 @@ func AskTGT(domain string, username string, password string, key []byte, eTypeVa
 	req.PAData = append(req.PAData, *paEncTsEnc)
 
 	// Send ASReq with encrypted timestamp
-	asRepBytes, err := SendMessage(dcIp, req)
+	asRepBytes, err := SendMessage(dialer, dcIp, req)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +199,7 @@ func AskTGT(domain string, username string, password string, key []byte, eTypeVa
 	return tgt, nil
 }
 
-func AskTGS(domain string, serverName PrincipalName, clientRealm string, clientName PrincipalName, ticket Ticket, key EncryptionKey, dcIp string) (*TGSRep, error) {
+func AskTGS(dialer proxy.Dialer, domain string, serverName PrincipalName, clientRealm string, clientName PrincipalName, ticket Ticket, key EncryptionKey, dcIp string) (*TGSRep, error) {
 	auth, err := NewAuthenticator(clientRealm, clientName)
 	if err != nil {
 		return nil, err
@@ -227,7 +229,7 @@ func AskTGS(domain string, serverName PrincipalName, clientRealm string, clientN
 		return nil, fmt.Errorf("cannot generate TGSReq: %s", err)
 	}
 
-	res, err := SendMessage(dcIp, tgsReq)
+	res, err := SendMessage(dialer, dcIp, tgsReq)
 	if err != nil {
 		return nil, err
 	}
@@ -254,11 +256,11 @@ func AskTGS(domain string, serverName PrincipalName, clientRealm string, clientN
 	return tgs, nil
 }
 
-func AskTGSWithTGT(domain string, serverName PrincipalName, tgt *ASRep, dcIp string) (*TGSRep, error) {
-	return AskTGS(domain, serverName, tgt.CRealm, tgt.CName, tgt.KDCRep.Ticket, tgt.DecryptedEncPart.Key, dcIp)
+func AskTGSWithTGT(dialer proxy.Dialer, domain string, serverName PrincipalName, tgt *ASRep, dcIp string) (*TGSRep, error) {
+	return AskTGS(dialer, domain, serverName, tgt.CRealm, tgt.CName, tgt.KDCRep.Ticket, tgt.DecryptedEncPart.Key, dcIp)
 }
 
-func AskTGSWithKirbi(domain string, serverName PrincipalName, kirbi *KRBCred, dcIp string) (*TGSRep, error) {
+func AskTGSWithKirbi(dialer proxy.Dialer, domain string, serverName PrincipalName, kirbi *KRBCred, dcIp string) (*TGSRep, error) {
 	if len(kirbi.DecryptedEncPart.TicketInfo) == 0 {
 		return nil, fmt.Errorf("kirbi file does not have TicketInfo field")
 	}
@@ -270,5 +272,5 @@ func AskTGSWithKirbi(domain string, serverName PrincipalName, kirbi *KRBCred, dc
 	info := kirbi.DecryptedEncPart.TicketInfo[0]
 	ticket := kirbi.Tickets[0]
 
-	return AskTGS(domain, serverName, info.PRealm, info.PName, ticket, info.Key, dcIp)
+	return AskTGS(dialer, domain, serverName, info.PRealm, info.PName, ticket, info.Key, dcIp)
 }

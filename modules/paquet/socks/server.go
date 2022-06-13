@@ -73,7 +73,12 @@ func (s *Server) Serve(network string, serverUri string) error {
 	s.username = username
 	s.password = password
 
-	fmt.Printf("Start socks server on %s\n", u.Host)
+	if len(s.username) > 0 && len(s.password) > 0 {
+		fmt.Printf("Start socks server on %s with authentication\n", u.Host)
+	} else {
+		fmt.Printf("Start socks server on %s\n", u.Host)
+	}
+
 	l, err := net.Listen(network, u.Host)
 	if err != nil {
 		return fmt.Errorf("cannot listen socks server: %s", err)

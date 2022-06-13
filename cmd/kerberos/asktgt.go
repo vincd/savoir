@@ -18,6 +18,7 @@ func init() {
 	var noPac bool
 	var format string
 	var outputFile string
+	var socks string
 
 	var askTgtCmd = &cobra.Command{
 		Use:   "asktgt",
@@ -39,13 +40,18 @@ func init() {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			dialer, err := getKdcDialer(socks)
+			if err != nil {
+				return fmt.Errorf("Cannot create SOCKS client: %s", err)
+			}
+
 			keyBytes, err := getKeyFlagValue(key)
 			if err != nil {
 				return err
 			}
 
 			fmt.Printf("[*] Ask AS-Rep for user %s\n", username)
-			tgt, err := krb5.AskTGT(domain, username, password, keyBytes, getETypeFromFlagValue(enctype), dcIp, false, noPac)
+			tgt, err := krb5.AskTGT(dialer, domain, username, password, keyBytes, getETypeFromFlagValue(enctype), dcIp, false, noPac)
 			if err != nil {
 				return err
 			}
@@ -73,10 +79,10 @@ func init() {
 		},
 	}
 
-	commandAddKerberosDomainFlags(askTgtCmd, &domain, &dcIp)
+	commandAddKerberosDomainFlags(askTgtCmd, &dcIp, &socks)
+	commandAddDomainUserFlags(askTgtCmd, &domain, &username, &password, &key)
 	commandAddKerberosETypeFlag(askTgtCmd, &enctype)
 	commandAddFormatFlag(askTgtCmd, &format)
-	commandAddDomainUserFlags(askTgtCmd, &username, &password, &key)
 	askTgtCmd.Flags().BoolVarP(&noPac, "no-pac", "", false, "Request a TGT without PAC")
 	askTgtCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Save the TGT to a kirbi file")
 

@@ -26,12 +26,17 @@ func init() {
 	var query string
 	var attributes string
 	var isJson bool
+	var isSecure bool
 
 	var ldapCmd = &cobra.Command{
 		Use:   "query",
 		Short: "Query LDAP server",
 		Long:  `Query LDAP server`,
 		Args: func(cmd *cobra.Command, args []string) error {
+			if isSecure && port == 389 {
+				port = 636
+			}
+
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -40,7 +45,7 @@ func init() {
 				return err
 			}
 
-			if err := ldapClient.Connect(host, port); err != nil {
+			if err := ldapClient.Connect(host, port, isSecure); err != nil {
 				return err
 			}
 			defer ldapClient.Close()
@@ -96,11 +101,12 @@ func init() {
 	ldapCmd.Flags().StringVarP(&password, "password", "p", "", "Password of the domain user")
 	ldapCmd.Flags().StringVarP(&ntlm, "ntlm", "n", "", "NTLM password hash of the domain user")
 	ldapCmd.Flags().StringVarP(&host, "host", "H", "", "LDAP server hostname")
-	ldapCmd.Flags().IntVarP(&port, "port", "", 389, "LDAP server port")
+	ldapCmd.Flags().IntVarP(&port, "port", "", 389, "LDAP server port (636 with secure flag set)")
 	ldapCmd.Flags().IntVarP(&sizeLimit, "size-limit", "", 1000, "LDAP size limit")
 	ldapCmd.Flags().StringVarP(&query, "query", "q", "(&(objectCategory=User))", "Query")
 	ldapCmd.Flags().StringVarP(&attributes, "attributes", "a", "cn,sAMAccountName,userAccountControl", "Attributes seprated by a comma")
 	ldapCmd.Flags().BoolVarP(&isJson, "json", "j", false, "Print output as a JSON object")
+	ldapCmd.Flags().BoolVarP(&isSecure, "secure", "", false, "Use secure connection (change default port to 636)")
 
 	Command.AddCommand(ldapCmd)
 }

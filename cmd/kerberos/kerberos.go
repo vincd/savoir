@@ -6,7 +6,10 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/net/proxy"
+
 	"github.com/vincd/savoir/modules/paquet/krb5/crypto"
+	"github.com/vincd/savoir/modules/paquet/socks"
 )
 
 var Command = &cobra.Command{
@@ -16,25 +19,36 @@ var Command = &cobra.Command{
 }
 
 // Add Domain name and Domain Controler IP as required flags
-func commandAddKerberosDomainFlags(cmd *cobra.Command, domain *string, dcIp *string) {
-	cmd.Flags().StringVarP(domain, "domain", "d", "", "Domain to target")
-	cobra.MarkFlagRequired(cmd.Flags(), "domain")
+func commandAddKerberosDomainFlags(cmd *cobra.Command, dcIp *string, socksAddress *string) {
 	cmd.Flags().StringVarP(dcIp, "dc-ip", "", "", "IP of the KDC (Domain controler)")
 	cobra.MarkFlagRequired(cmd.Flags(), "dc-ip")
+	cmd.Flags().StringVarP(socksAddress, "socks", "", "", "Socks proxy server (host:port)")
 }
 
-// Add flags to authenticate the domain user (the requester): username, password or key
-func commandAddDomainUserFlags(cmd *cobra.Command, username *string, password *string, key *string) {
+// Add flags to authenticate the domain user (the requester): domain, ticket or username, password or key
+// When we use a ticket then the username is not required
+func commandAddDomainUserCredentialsFlags(cmd *cobra.Command, domain *string, username *string, password *string, key *string, ticket *string) {
+	cmd.Flags().StringVarP(domain, "domain", "d", "", "Domain to target")
 	cmd.Flags().StringVarP(username, "username", "u", "", "Username of the targeted user")
-	cobra.MarkFlagRequired(cmd.Flags(), "username")
 	cmd.Flags().StringVarP(password, "password", "p", "", "Password of the targeted user")
 	cmd.Flags().StringVarP(key, "key", "k", "", "Secret key of the targeted user (derivated from password)")
+
+	if ticket != nil {
+		cmd.Flags().StringVarP(ticket, "ticket", "", "", "Kirbi file containing a TGT")
+	} else {
+		cobra.MarkFlagRequired(cmd.Flags(), "domain")
+		cobra.MarkFlagRequired(cmd.Flags(), "username")
+	}
 }
 
-// Add flags to authenticate the domain user (the requester): ticket or username, password or key
-func commandAddDomainUserFlagsWithTicket(cmd *cobra.Command, username *string, password *string, key *string, ticket *string) {
-	commandAddDomainUserFlags(cmd, username, password, key)
-	cmd.Flags().StringVarP(ticket, "ticket", "t", "", "Kirbi file containing a TGT")
+// Add flags to authenticate the domain user (the requester): domain, username, password or key
+func commandAddDomainUserFlags(cmd *cobra.Command, domain *string, username *string, password *string, key *string) {
+	commandAddDomainUserCredentialsFlags(cmd, domain, username, password, key, nil)
+}
+
+// Add flags to authenticate the domain user (the requester): domain, ticket or username, password or key
+func commandAddDomainUserFlagsWithTicket(cmd *cobra.Command, domain *string, username *string, password *string, key *string, ticket *string) {
+	commandAddDomainUserCredentialsFlags(cmd, domain, username, password, key, ticket)
 }
 
 // Add flags to connect to a LDAP endpoint
@@ -146,4 +160,18 @@ func validateFormatFlag(format string) error {
 // Print information about the domain
 func printDomainInformation(domain string, dcIp string) {
 	fmt.Printf("[*] Target domain: %s (%s)\n", domain, dcIp)
+}
+
+// Get dialer to KDC (using socks and timeout)
+func getKdcDialer(socksAddress string) (proxy.Dialer, error) {
+	if len(socksAddress) > 0 {
+		dialer, err := socks.NewDialer(socksAddress)
+		if err != nil {
+			return nil, err
+		}
+
+		return dialer, nil
+	} else {
+		return proxy.Direct, nil
+	}
 }
