@@ -44,6 +44,41 @@ func (l *LDAPClient) Close() {
 	l.l.Close()
 }
 
+// Authenticate to the ldap server using an account and the password
+func (l *LDAPClient) AuthenticateWithAccount(username string, password string) error {
+	if err := l.l.Bind(username, password); err != nil {
+		return err
+	}
+
+	sr := ldapv3.NewSearchRequest(
+		"",
+		ldapv3.ScopeBaseObject,
+		ldapv3.NeverDerefAliases,
+		0, 0, false,
+		"(objectClass=*)",
+		[]string{"defaultNamingContext"},
+		nil,
+	)
+
+	res, err := l.l.Search(sr)
+	if err != nil {
+		return fmt.Errorf("cannot search default naming context: %s", err)
+	}
+
+	if len(res.Entries) == 0 {
+		return fmt.Errorf("ldap naming request search returns no result")
+	}
+
+	defaultNamingContext := res.Entries[0].GetAttributeValue("defaultNamingContext")
+	if defaultNamingContext == "" {
+		return fmt.Errorf("ldap naming request search returns an empty defaultNamingContext")
+	}
+
+	l.Base = defaultNamingContext
+
+	return nil
+}
+
 // Authenticate to the ldap server using a domain account and the password
 func (l *LDAPClient) AuthenticateWithDomainAccount(domain string, username string, password string) error {
 	if err := l.l.NTLMBind(domain, username, password); err != nil {

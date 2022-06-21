@@ -50,7 +50,11 @@ func init() {
 			}
 			defer ldapClient.Close()
 
-			if len(password) > 0 {
+			if len(domain) == 0 {
+				if err := ldapClient.AuthenticateWithAccount(username, password); err != nil {
+					return err
+				}
+			} else if len(password) > 0 {
 				if err := ldapClient.AuthenticateWithDomainAccount(domain, username, password); err != nil {
 					return err
 				}
