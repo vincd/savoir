@@ -7,9 +7,14 @@ import (
 )
 
 var utf16LEDecoder = unicode.UTF16(unicode.LittleEndian, unicode.IgnoreBOM).NewDecoder()
+var utf16LEEncoder = unicode.UTF16(unicode.LittleEndian, unicode.IgnoreBOM).NewEncoder()
 
 func UTF16Decode(encodedString string) (string, error) {
 	return utf16LEDecoder.String(encodedString)
+}
+
+func UTF16Encode(s string) ([]byte, error) {
+	return utf16LEEncoder.Bytes([]byte(s))
 }
 
 func TrimNullBytes(s string) string {
