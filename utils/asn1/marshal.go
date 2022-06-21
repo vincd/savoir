@@ -757,3 +757,23 @@ func MarshalWithParams(val interface{}, params string) ([]byte, error) {
 	e.Encode(b)
 	return b, nil
 }
+
+func MarshalWithRawValue(val interface{}, class int, tag int, isCompound bool) ([]byte, error) {
+	b, err := Marshal(val)
+	if err != nil {
+		return nil, err
+	}
+
+	return MarshalWithRawValueBytes(b, class, tag, isCompound)
+}
+
+func MarshalWithRawValueBytes(bytes []byte, class int, tag int, isCompound bool) ([]byte, error) {
+	rawValue := RawValue{
+		Class:      class,
+		Tag:        tag,
+		IsCompound: isCompound,
+		Bytes:      bytes,
+	}
+
+	return Marshal(rawValue)
+}

@@ -10,6 +10,7 @@ const (
 	KeyUsageAsRepTgsRepTicket     uint32 = 2
 	KeyUsageAsRepEncryptedPart    uint32 = 3
 	KeyUsageTgsReqPaAuthenticator uint32 = 7
+	KeyUsageApReqAuthenticator    uint32 = 11
 )
 
 // https://datatracker.ietf.org/doc/html/rfc4120#section-5.2.9

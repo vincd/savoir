@@ -9,6 +9,7 @@ import (
 	"github.com/vincd/savoir/cmd/kerberos"
 	"github.com/vincd/savoir/cmd/ldap"
 	"github.com/vincd/savoir/cmd/lsass"
+	"github.com/vincd/savoir/cmd/mssql"
 	"github.com/vincd/savoir/cmd/sam"
 	"github.com/vincd/savoir/cmd/scanner"
 	"github.com/vincd/savoir/cmd/socks"
@@ -59,6 +60,7 @@ func addSubCommands() {
 	rootCmd.AddCommand(scanner.Command)
 	rootCmd.AddCommand(socks.Command)
 	rootCmd.AddCommand(lsass.Command)
+	rootCmd.AddCommand(mssql.Command)
 	rootCmd.AddCommand(token.Command)
 	rootCmd.AddCommand(webscreenshot.Command)
 
