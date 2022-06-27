@@ -10,7 +10,7 @@ import (
 func uint16len(b []byte) uint16 {
 	l := len(b)
 	if len(b) > 0xFFFF {
-		fmt.Printf("[!] uint16len: uint16 overflow, buffer length is %d", l)
+		log.Warn("uint16len: uint16 overflow, buffer length is %d", l)
 	}
 	return uint16(l)
 }

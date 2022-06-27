@@ -126,42 +126,42 @@ func (t *TdsTokens) PrintInfos() {
 				oldValueLength := uint8(tokenEnvChange.Env.Data[1+newValueLength*2])
 				oldValue := tokenEnvChange.Env.Data[2+newValueLength*2 : 2+newValueLength*2+oldValueLength*2]
 
-				fmt.Printf("[*] [Env] Change database from %s to %s\n", oldValue, newValue)
+				log.Info("[Env] Change database from %s to %s\n", oldValue, newValue)
 			} else if tokenEnvChange.Env.Type == TDS_ENVCHANGE_LANGUAGE {
 				newValueLength := uint8(tokenEnvChange.Env.Data[0])
 				newValue := tokenEnvChange.Env.Data[1 : 1+newValueLength*2]
 				oldValueLength := uint8(tokenEnvChange.Env.Data[1+newValueLength*2])
 				oldValue := tokenEnvChange.Env.Data[2+newValueLength*2 : 2+newValueLength*2+oldValueLength*2]
 
-				fmt.Printf("[*] [Env] Change language from %s to %s\n", oldValue, newValue)
+				log.Info("[Env] Change language from %s to %s\n", oldValue, newValue)
 			} else if tokenEnvChange.Env.Type == TDS_ENVCHANGE_PACKETSIZE {
 				newValueLength := uint8(tokenEnvChange.Env.Data[0])
 				newValue := tokenEnvChange.Env.Data[1 : 1+newValueLength*2]
 				oldValueLength := uint8(tokenEnvChange.Env.Data[1+newValueLength*2])
 				oldValue := tokenEnvChange.Env.Data[2+newValueLength*2 : 2+newValueLength*2+oldValueLength*2]
 
-				fmt.Printf("[*] [Env] Change packet size from %s to %s\n", oldValue, newValue)
+				log.Info("[Env] Change packet size from %s to %s\n", oldValue, newValue)
 			} else if tokenEnvChange.Env.Type == TDS_ENVCHANGE_COLLATION {
-				fmt.Printf("[*] [Env] Change collation: %+v\n", tokenEnvChange.Env.Data)
+				log.Info("[Env] Change collation: %+v\n", tokenEnvChange.Env.Data)
 			} else {
-				fmt.Printf("[*] [Env] Change env (0x%x): %+v\n", tokenEnvChange.Env.Type, tokenEnvChange.Env.Data)
+				log.Info("[Env] Change env (0x%x): %+v\n", tokenEnvChange.Env.Type, tokenEnvChange.Env.Data)
 			}
 		case TDS_TOKEN_ERROR:
 			tokenInfo := token.(*TdsTokenInfo)
-			fmt.Printf("[!] [Error] \"%s\" on server \"%s\" process \"%s\" (lines: %d)\n", tokenInfo.MsgText, tokenInfo.ServerName, tokenInfo.ProcName, tokenInfo.LineNumber)
+			log.Error("\"%s\" on server \"%s\" process \"%s\" (lines: %d)\n", tokenInfo.MsgText, tokenInfo.ServerName, tokenInfo.ProcName, tokenInfo.LineNumber)
 
 		case TDS_TOKEN_LOGINACK:
 			tokenLoginAck := token.(*TdsTokenLoginAck)
-			fmt.Printf("[*] [Login] ACK %s (%d) %d.%d.%d.%d\n", tokenLoginAck.ProgName, tokenLoginAck.TdsVersion, tokenLoginAck.MajorVer, tokenLoginAck.MinorVer, tokenLoginAck.BuildNumberHigh, tokenLoginAck.BuildNumberLow)
+			log.Info("[Login] ACK %s (%d) %d.%d.%d.%d\n", tokenLoginAck.ProgName, tokenLoginAck.TdsVersion, tokenLoginAck.MajorVer, tokenLoginAck.MinorVer, tokenLoginAck.BuildNumberHigh, tokenLoginAck.BuildNumberLow)
 
 		case TDS_TOKEN_RETURNSTATUS:
 			tokenReturnValue := token.(*TdsTokenReturnValue)
-			fmt.Printf("[*] [Return] status 0x%x\n", tokenReturnValue.Value)
+			log.Info("[Return] status 0x%x\n", tokenReturnValue.Value)
 
 		case TDS_TOKEN_DONE, TDS_TOKEN_DONEINPROC, TDS_TOKEN_DONEPROC:
 			tokenDone := token.(*TdsTokenDone)
 			tokenId := 0
-			fmt.Printf("[*] [Done 0x%x] with status 0x%x cmd 0x%x and %d rows\n", tokenId, tokenDone.Status, tokenDone.CurCmd, tokenDone.DoneRowCount)
+			log.Info("[Done 0x%x] with status 0x%x cmd 0x%x and %d rows\n", tokenId, tokenDone.Status, tokenDone.CurCmd, tokenDone.DoneRowCount)
 		}
 	}
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/vincd/savoir/modules/paquet/krb5"
 	"github.com/vincd/savoir/modules/paquet/spnego"
 	"github.com/vincd/savoir/utils"
+	"github.com/vincd/savoir/utils/logger"
 )
 
 type MSSQL struct {
@@ -25,6 +26,8 @@ type MSSQL struct {
 
 	packetSize uint32
 }
+
+var log = logger.NewLoggerWithName("MSSQL")
 
 func NewMSSQL(host string, port uint32) (*MSSQL, error) {
 	return &MSSQL{host: host, port: port, packetSize: 32763}, nil
@@ -251,7 +254,7 @@ func (m *MSSQL) LoginWithKerberos(ticket krb5.Ticket, ticketInfo krb5.KrbCredInf
 	}
 
 	if prelogin.Encryption[0] == TDS_ENCRYPT_REQ || prelogin.Encryption[0] == TDS_ENCRYPT_OFF {
-		fmt.Printf("[*] Encryption required, switching to TLS\n")
+		log.Info("Encryption required, switching to TLS\n")
 		tlsConfig := &tls.Config{
 			InsecureSkipVerify:          true,
 			DynamicRecordSizingDisabled: true,
@@ -329,7 +332,7 @@ func (m *MSSQL) LoginWithKerberos(ticket krb5.Ticket, ticketInfo krb5.KrbCredInf
 }
 
 func (m *MSSQL) Batch(cmd string) error {
-	fmt.Printf("\nSQL> %s\n", cmd)
+	fmt.Printf("SQL> %s\n", cmd)
 	encodedCmd, err := utils.UTF16Encode(fmt.Sprintf("%s\r\n", cmd))
 	if err != nil {
 		return err

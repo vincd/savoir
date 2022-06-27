@@ -16,6 +16,7 @@ import (
 	"github.com/vincd/savoir/cmd/token"
 	"github.com/vincd/savoir/cmd/webscreenshot"
 	"github.com/vincd/savoir/utils"
+	"github.com/vincd/savoir/utils/logger"
 )
 
 var rootCmd = &cobra.Command{
@@ -65,6 +66,10 @@ func addSubCommands() {
 	rootCmd.AddCommand(webscreenshot.Command)
 
 	addVersionCommand()
+
+	viper.SetEnvPrefix(utils.AppVersion.Name)
+	viper.BindEnv("logger-level", "SAVOIR_LOGGER_LEVEL")
+	logger.UpdateDefaultLogLevel(viper.GetString("logger-level"))
 }
 
 func Execute() error {
