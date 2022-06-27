@@ -92,7 +92,7 @@ aes256-cts-hmac-sha1-96
 ```
 
 
-#### AS-REP roasting 
+#### AS-REP roasting
 
 A User account may have the option `Do not require Kerberos preauthentication`
 checked.
@@ -126,6 +126,14 @@ savoir ldap query -H <LDAP_HOSTNAME> -d <DOMAIN> -u <USERNAME> -n <NTLM_HASH> -q
 ```
 
 
+### MSSQL
+
+```bash
+savoir mssql query -H <MSSQL_HOSTNAME> -t <KRB_TICKET> -q <SQL_QUERY>
+savoir mssql xp_cmdshell -H <MSSQL_HOSTNAME> -t <KRB_TICKET> -c <CMD>
+```
+
+
 ### token
 
 ```bash
@@ -141,16 +149,26 @@ This command take a screenshot of a URL using a headless browser.
 savoir webscreenshot --url {url} --renderer {chrome|chromium|firefox} --renderer-path {path}
 ```
 
-## Scanner
+### Scanner
 
-### TCP Scanner
+#### TCP Scanner
 
-This is a TCP connect scanner using Go `net.Dialer` to test if there is 
+This is a TCP connect scanner using Go `net.Dialer` to test if there is
 opned services.
 
 ```bash
 savoir scanner tcp --host scanme.nmap.org --json
 ```
+
+### Log level
+
+Change log output with the environnement variable `SAVOIR_LOGGER_LEVEL`:
+
+```bash
+SAVOIR_LOGGER_LEVEL=warn savoir ...
+```
+
+Possible values are: `debug`, `warn`, `info` and `error`.
 
 
 ## Credits
